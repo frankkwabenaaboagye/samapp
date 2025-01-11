@@ -74,7 +74,7 @@ def get_the_task(event, context):
     return {
         "statusCode": 200,
         "headers": {
-            'Access-Control-Allow-Headers': 'X-Forwarded-For,Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
+            'Access-Control-Allow-Headers': 'X-Forwarded-For,Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,access-control-allow-origin',
             'Access-Control-Allow-Origin': 'http://localhost:4200',
             'Access-Control-Allow-Methods': 'POST, GET, PUT, OPTIONS',
             'Access-Control-Allow-Credentials': 'true'
