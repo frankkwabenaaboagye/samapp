@@ -29,6 +29,56 @@ Resources:
             Path: /hello
             Method: get
 
+## --------------------------------------
+
+  ApiGatewayApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      # Cors: "'*'"
+      Cors:
+        AllowMethods: "'POST, GET, PUT, OPTIONS'"
+        AllowHeaders: "'X-Forwarded-For,Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        AllowOrigin: "'http://localhost:4200'"
+        AllowCredentials: true
+      Auth:
+        AddDefaultAuthorizerToCorsPreflight: false
+        DefaultAuthorizer: CognitoAuthorizer
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn:
+              Fn::GetAtt: [CognitoUserPool, Arn]
+            AuthorizationScopes:
+              - email
+              - openid
+              - profile
+
+  GetTasksFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: hello_world/
+      Handler: tms.lambda_handler
+      Runtime: python3.12
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          TASKS_TABLE: !Ref TasksTable
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TasksTable
+      Events:
+        GetMockAPI:
+          Type: Api
+          Properties:
+            Path: /mock
+            Method: get
+            RestApiId:
+              Ref: ApiGatewayApi
+      Tags:
+        purpose: "for testing"
+
 ## ---------------------------------------
   CognitoUserPool:
     Type: AWS::Cognito::UserPool
@@ -302,6 +352,7 @@ Resources:
 
 
 
+
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
   # Find out more about other implicit resources you can reference within SAM
@@ -353,3 +404,21 @@ Outputs:
   StackName:
     Description: Name of the CloudFormation stack
     Value: !Ref AWS::StackName
+
+  GetTasksFunctionArn:
+    Description: ARN of the Get Tasks Lambda function
+    Value: !GetAtt GetTasksFunction.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-GetTasksFunctionArn
+
+  GetTasksFunctionName:
+    Description: Name of the Get Tasks Lambda function
+    Value: !Ref GetTasksFunction
+    Export:
+      Name: !Sub ${AWS::StackName}-GetTasksFunctionName
+
+  GetTasksFunctionLogGroup:
+    Description: CloudWatch Log Group for Get Tasks Lambda
+    Value: !Sub "/aws/lambda/${GetTasksFunction}"
+    Export:
+      Name: !Sub ${AWS::StackName}-GetTasksFunctionLogGroup
