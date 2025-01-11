@@ -20,12 +20,287 @@ Resources:
       Runtime: python3.12
       Architectures:
         - x86_64
+      Policies: 
+        - AWSLambdaBasicExecutionRole
       Events:
         HelloWorld:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
             Path: /hello
             Method: get
+
+## ---------------------------------------
+  CognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub ${AWS::StackName}-UserPool
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: false
+      AutoVerifiedAttributes:
+        - email
+      UsernameAttributes:
+        - email
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Mutable: true
+          Required: true
+        - Name: name
+          AttributeDataType: String
+          Mutable: true
+          Required: true
+        - Name: "role"
+          AttributeDataType: String
+          Mutable: true
+          Required: false
+          StringAttributeConstraints:
+            MaxLength: '256'
+            MinLength: '1'
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireUppercase: true
+      # LambdaConfig:
+      #   PostConfirmation: !GetAtt PostConfirmationLambda.Arn
+
+  # User Pool Client
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref CognitoUserPool
+      ClientName: !Sub ${AWS::StackName}-client
+      GenerateSecret: false
+      AllowedOAuthFlows:
+        - code
+        - implicit
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthScopes:
+        - email
+        - openid
+        - profile
+      CallbackURLs:
+        - http://localhost:5000/authorize
+      LogoutURLs:
+        - http://localhost:5000/
+      SupportedIdentityProviders:
+        - COGNITO
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      PreventUserExistenceErrors: ENABLED
+
+
+  # Identity Pool
+  IdentityPool:
+    Type: AWS::Cognito::IdentityPool
+    Properties:
+      IdentityPoolName: !Sub ${AWS::StackName}-IdentityPool
+      AllowUnauthenticatedIdentities: false
+      CognitoIdentityProviders:
+        - ClientId: !Ref UserPoolClient
+          ProviderName: !GetAtt CognitoUserPool.ProviderName
+          ServerSideTokenCheck: true
+
+  UserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: !Sub ${AWS::StackName}-${AWS::Region}-${AWS::AccountId}  # More unique domain
+      UserPoolId: !Ref CognitoUserPool
+
+  # DynamoDB Table for Tasks
+  TasksTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${AWS::StackName}-tasks-table
+      AttributeDefinitions:
+        - AttributeName: task_id
+          AttributeType: S
+        - AttributeName: responsibility
+          AttributeType: S
+        - AttributeName: deadline
+          AttributeType: S
+      KeySchema:
+        - AttributeName: task_id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: UserTasksIndex
+          KeySchema:
+            - AttributeName: responsibility
+              KeyType: HASH
+            - AttributeName: deadline
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      BillingMode: PAY_PER_REQUEST
+
+
+  # IAM Roles
+  AdminRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: cognito-identity.amazonaws.com
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                "cognito-identity.amazonaws.com:aud": !Ref IdentityPool
+              "ForAnyValue:StringLike":
+                "cognito-identity.amazonaws.com:amr": authenticated
+      Policies:
+        - PolicyName: AdminPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:GetItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource: !GetAtt TasksTable.Arn
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                  - sns:Subscribe
+                  - sns:Unsubscribe
+                Resource: '*'
+
+  TeamMemberRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: cognito-identity.amazonaws.com
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                 "cognito-identity.amazonaws.com:aud": !Ref IdentityPool
+              "ForAnyValue:StringLike":
+                "cognito-identity.amazonaws.com:amr": authenticated
+      Policies:
+        - PolicyName: TeamMemberPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                Resource: !GetAtt TasksTable.Arn
+              # - Effect: Allow
+              #   Action:
+              #     - sns:Publish
+              #   Resource: !Ref TasksCompletionNotificationTopic
+
+  # Cognito Authentication Roles
+  CognitoAuthRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: cognito-identity.amazonaws.com
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                'cognito-identity.amazonaws.com:aud': !Ref IdentityPool
+              'ForAnyValue:StringLike':
+                'cognito-identity.amazonaws.com:amr': authenticated
+      Policies:
+        - PolicyName: CognitoAuthorizedPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - mobileanalytics:PutEvents
+                  - cognito-sync:*
+                Resource: '*'
+
+  CognitoUnauthRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: cognito-identity.amazonaws.com
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                'cognito-identity.amazonaws.com:aud': !Ref IdentityPool
+              'ForAnyValue:StringLike':
+                'cognito-identity.amazonaws.com:amr': unauthenticated
+      Policies:
+        - PolicyName: CognitoUnauthorizedPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Deny
+                Action: '*'
+                Resource: '*'
+
+  # Identity Pool Role Attachment
+  IdentityPoolRoleAttachment:
+    Type: AWS::Cognito::IdentityPoolRoleAttachment
+    Properties:
+      IdentityPoolId: !Ref IdentityPool
+      Roles:
+        authenticated: !GetAtt CognitoAuthRole.Arn
+        unauthenticated: !GetAtt CognitoUnauthRole.Arn
+      RoleMappings:
+        userpool1:
+          IdentityProvider: !Sub ${CognitoUserPool.ProviderName}:${UserPoolClient}
+          AmbiguousRoleResolution: Deny
+          Type: Rules
+          RulesConfiguration:
+            Rules:
+              - Claim: cognito:groups
+                MatchType: Contains
+                RoleARN: !GetAtt AdminRole.Arn
+                Value: Admin
+              - Claim: cognito:groups
+                MatchType: Contains
+                RoleARN: !GetAtt TeamMemberRole.Arn
+                Value: TeamMember
+
+  AdminGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: Admin
+      UserPoolId: !Ref CognitoUserPool 
+      Description: "Administrator group with full access"
+      Precedence: 0
+      RoleArn: !GetAtt AdminRole.Arn    # Link the AdminRole to Admin group
+
+  TeamMemberGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: TeamMember
+      UserPoolId: !Ref CognitoUserPool
+      Description: "Team member group with limited access"
+      Precedence: 1
+      RoleArn: !GetAtt TeamMemberRole.Arn    # Link the TeamMemberRole to TeamMember group
+
+
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
@@ -40,3 +315,41 @@ Outputs:
   HelloWorldFunctionIamRole:
     Description: "Implicit IAM Role created for Hello World function"
     Value: !GetAtt HelloWorldFunctionRole.Arn
+
+  #-------------------
+  UserPoolId:
+    Description: ID of the Cognito User Pool
+    Value: !Ref CognitoUserPool
+  UserPoolClientId:
+    Description: ID of the Cognito User Pool Client
+    Value: !Ref UserPoolClient
+  IdentityPoolId:
+    Description: ID of the Cognito Identity Pool
+    Value: !Ref IdentityPool
+  TasksTableName:
+    Description: Name of the DynamoDB table
+    Value: !Ref TasksTable
+  AdminRoleArn:
+    Description: ARN of the Admin IAM Role
+    Value: !GetAtt AdminRole.Arn
+  TeamMemberRoleArn:
+    Description: ARN of the Team Member IAM Role
+    Value: !GetAtt TeamMemberRole.Arn
+  CognitoAuthRoleARN:
+    Description: ARN of the Cognito Authentication Role
+    Value: !GetAtt CognitoAuthRole.Arn
+  CognitoUnauthRoleARN:
+    Description: ARN of the Cognito Unauthenticated Role
+    Value: !GetAtt CognitoUnauthRole.Arn
+  CognitoUserPoolArn:
+    Description: ARN of the Cognito User Pool
+    Value: !GetAtt CognitoUserPool.Arn
+  IdentityPoolRoleAttachmentId:
+    Description: The Id of the Identity Pool Role Attachment
+    Value: !GetAtt IdentityPoolRoleAttachment.Id
+  Region:
+    Description: Region where the stack is deployed
+    Value: !Ref AWS::Region
+  StackName:
+    Description: Name of the CloudFormation stack
+    Value: !Ref AWS::StackName
