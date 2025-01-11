@@ -77,7 +77,7 @@ Resources:
             RestApiId:
               Ref: ApiGatewayApi
       Tags:
-        purpose: "for testing only"
+        purpose: "for testing only purpose"
 
 ## ---------------------------------------
   CognitoUserPool:
