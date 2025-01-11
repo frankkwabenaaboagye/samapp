@@ -46,12 +46,10 @@ Resources:
         DefaultAuthorizer: CognitoAuthorizer
         Authorizers:
           CognitoAuthorizer:
-            UserPoolArn:
-              Fn::GetAtt: [CognitoUserPool, Arn]
-            AuthorizationScopes:
-              - email
-              - openid
-              - profile
+            UserPoolArn: !GetAtt CognitoUserPool.Arn
+            Identity:
+              Header: Authorization
+
 
   GetTasksFunction:
     Type: AWS::Serverless::Function
@@ -77,7 +75,7 @@ Resources:
             RestApiId:
               Ref: ApiGatewayApi
       Tags:
-        purpose: "testing only purpose"
+        purpose: "testing only"
 
 ## ---------------------------------------
   CognitoUserPool:
