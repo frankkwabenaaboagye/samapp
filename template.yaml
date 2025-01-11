@@ -38,7 +38,7 @@ Resources:
       # Cors: "'*'"
       Cors:
         AllowMethods: "'POST, GET, PUT, OPTIONS'"
-        AllowHeaders: "'X-Forwarded-For,Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,access-control-allow-origin'"
+        AllowHeaders: "'X-Forwarded-For,Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,access-control-allow-origin,access-control-allow-credentials'"
         AllowOrigin: "'http://localhost:4200'"
         AllowCredentials: true
       Auth:
@@ -75,7 +75,34 @@ Resources:
             RestApiId:
               Ref: ApiGatewayApi
       Tags:
-        purpose: "testing only"
+        purpose: "testing onlly purpose"
+
+  CreateTaskFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: hello_world/
+      Handler: app.create_the_task
+      Runtime: python3.12
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          TASKS_TABLE: !Ref TasksTable
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TasksTable
+      Events:
+        CreateTaskAPI:
+          Type: Api
+          Properties:
+            Path: /mock
+            Method: post
+            RestApiId:
+              Ref: ApiGatewayApi
+      Tags:
+        purpose: "testing"
+
 
 ## ---------------------------------------
   CognitoUserPool:
