@@ -75,7 +75,7 @@ Resources:
             RestApiId:
               Ref: ApiGatewayApi
       Tags:
-        purpose: "testing onlly purpose"
+        purpose: "testing only purpose"
 
   CreateTaskFunction:
     Type: AWS::Serverless::Function

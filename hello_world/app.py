@@ -4,8 +4,7 @@ import os
 import uuid
 from datetime import datetime, timedelta, timezone
 
-dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table(os.environ['TASKS_TABLE'])
+
 
 def lambda_handler(event, context):
     """Sample pure Lambda function
@@ -46,6 +45,8 @@ def lambda_handler(event, context):
     }
 
 def get_the_task(event, context):
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table(os.environ['TASKS_TABLE'])
 
     try:
         response = table.scan()
@@ -80,6 +81,8 @@ def get_the_task(event, context):
 
 
 def create_the_task(event, context):
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table(os.environ['TASKS_TABLE'])
 
     print("Event for the create ...")
     print(event)
