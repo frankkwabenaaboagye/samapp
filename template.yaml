@@ -185,6 +185,83 @@ Resources:
       Tags:
         purpose: "testing"
 
+
+  OnboardUserRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service: lambda.amazonaws.com
+              Action: sts:AssumeRole
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        Policies:
+          - PolicyName: OnboardUserPolicy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - cognito-idp:AdminCreateUser
+                    - cognito-idp:AdminAddUserToGroup
+                    - cognito-idp:ListUsers
+                  Resource: !GetAtt CognitoUserPool.Arn
+
+  OnboardUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt OnboardUserRole.Arn
+      CodeUri: user_management/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          USER_POOL_ID: !Ref CognitoUserPool
+          USER_POOL_CLIENT_ID: !Ref UserPoolClient
+      Policies:
+        - CognitoUserPoolAdminPolicy: {}
+      Events:
+        OnboardAPI:
+          Type: Api
+          Properties:
+            Path: /users
+            Method: post
+            RestApiId:
+              Ref: ApiGatewayApi
+      Tags:
+        purpose: "testing"
+
+  ListUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt OnboardUserRole.Arn
+      CodeUri: user_management/
+      Handler: app.get_the_users
+      Runtime: python3.12
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          USER_POOL_ID: !Ref CognitoUserPool
+          USER_POOL_CLIENT_ID: !Ref UserPoolClient
+      Policies:
+        - CognitoUserPoolAdminPolicy: {}
+      Events:
+        GetUsersAPI:  # New event for GET /users
+          Type: Api
+          Properties:
+            Path: /users
+            Method: get
+            RestApiId:
+              Ref: ApiGatewayApi
+      Tags:
+        purpose: "testing"
+
 ## ---------------------------------------
   CognitoUserPool:
     Type: AWS::Cognito::UserPool
@@ -528,3 +605,22 @@ Outputs:
     Value: !Sub "/aws/lambda/${GetTasksFunction}"
     Export:
       Name: !Sub ${AWS::StackName}-GetTasksFunctionLogGroup
+
+  UpdateTaskFunctionArn:
+    Description: ARN of the Update Task Lambda function
+    Value: !GetAtt UpdateTaskFunction.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-UpdateTaskFunctionArn
+
+  GetTaskByIdFunctionArn:
+    Description: ARN of the Get Task By ID Lambda function
+    Value: !GetAtt GetTaskByIdFunction.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-GetTaskByIdFunctionArn
+
+  DeleteTaskFunctionArn:
+    Description: ARN of the Delete Task Lambda function
+    Value: !GetAtt DeleteTaskFunction.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-DeleteTaskFunctionArn
+
