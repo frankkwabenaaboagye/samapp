@@ -37,7 +37,7 @@ Resources:
       StageName: prod
       # Cors: "'*'"
       Cors:
-        AllowMethods: "'POST, GET, PUT, OPTIONS'"
+        AllowMethods: "'POST, GET, PUT, OPTIONS, DELETE'"
         AllowHeaders: "'X-Forwarded-For,Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,access-control-allow-origin,access-control-allow-credentials'"
         AllowOrigin: "'http://localhost:4200'"
         AllowCredentials: true
@@ -103,6 +103,87 @@ Resources:
       Tags:
         purpose: "testing"
 
+
+#+++++++++++++++++++++
+
+  UpdateTaskFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: hello_world/
+      Handler: app.update_the_task
+      Runtime: python3.12
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          TASKS_TABLE: !Ref TasksTable
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TasksTable
+      Events:
+        UpdateTaskAPI:
+          Type: Api
+          Properties:
+            Path: /mock/{taskId}
+            Method: put
+            RestApiId:
+              Ref: ApiGatewayApi
+      Tags:
+        purpose: "testing"
+
+  DeleteTaskFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: hello_world/
+      Handler: app.delete_the_task
+      Runtime: python3.12
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          TASKS_TABLE: !Ref TasksTable
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TasksTable
+      Events:
+        DeleteTaskAPI:
+          Type: Api
+          Properties:
+            Path: /mock/{taskId}
+            Method: delete
+            RestApiId:
+              Ref: ApiGatewayApi
+      Tags:
+        purpose: "testing"
+
+
+  GetTaskByIdFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: hello_world/
+      Handler: app.get_the_task_by_id
+      Runtime: python3.12
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          TASKS_TABLE: !Ref TasksTable
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TasksTable
+      Events:
+        GetTaskById:
+          Type: Api
+          Properties:
+            Path: /mock/{taskId}
+            Method: get
+            RestApiId:
+              Ref: ApiGatewayApi
+      Tags:
+        purpose: "testing"
 
 ## ---------------------------------------
   CognitoUserPool:
