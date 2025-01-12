@@ -215,7 +215,8 @@ Resources:
     Properties:
       Role: !GetAtt OnboardUserRole.Arn
       CodeUri: user_management/
-      Handler: app.lambda_handler
+      # Handler: app.lambda_handler
+      Handler: app.onboard_user
       Runtime: python3.12
       Architectures:
         - x86_64
@@ -256,6 +257,31 @@ Resources:
           Type: Api
           Properties:
             Path: /users
+            Method: get
+            RestApiId:
+              Ref: ApiGatewayApi
+      Tags:
+        purpose: "testing"
+
+  GetUserTasksFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: hello_world/
+      Handler: app.get_the_user_tasks
+      Runtime: python3.12
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          TASKS_TABLE: !Ref TasksTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TasksTable
+      Events:
+        GetUserTasksAPI:
+          Type: Api
+          Properties:
+            Path: /users/{userId}/tasks
             Method: get
             RestApiId:
               Ref: ApiGatewayApi

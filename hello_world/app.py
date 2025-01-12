@@ -293,6 +293,61 @@ def get_the_task_by_id(event, context):
         }
 
 
+def get_the_user_tasks(event, context):
+    print("Event for get user tasks ...")
+    print(event)
+    print("proceeding to get user tasks...")
+
+    try:
+        # Get user ID from path parameters
+        user_email = event['pathParameters']['userId']
+        
+        # Get tasks for specific user
+        response = table.scan(
+            FilterExpression='responsibility = :user',
+            ExpressionAttributeValues={
+                ':user': user_email
+            }
+        )
+        
+        tasks = response['Items']
+        
+        # Handle pagination if there are more items
+        while 'LastEvaluatedKey' in response:
+            response = table.scan(
+                ExclusiveStartKey=response['LastEvaluatedKey'],
+                FilterExpression='responsibility = :user',
+                ExpressionAttributeValues={
+                    ':user': user_email
+                }
+            )
+            tasks.extend(response['Items'])
+
+        return {
+            'statusCode': 200,
+            'headers': myHeaders,
+            'body': json.dumps({
+                'tasks': tasks,
+                'count': len(tasks),
+                'user': user_email
+            })
+        }
+    except KeyError:
+        return {
+            'statusCode': 400,
+            'headers': myHeaders,
+            'body': json.dumps({
+                'error': 'Missing user ID in path parameters'
+            })
+        }
+    except Exception as e:
+        return {
+            'statusCode': 500,
+            'headers': myHeaders,
+            'body': json.dumps({
+                'error': str(e)
+            })
+        }
 
 
 
