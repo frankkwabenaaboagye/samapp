@@ -905,12 +905,13 @@ Resources:
     Properties:
       # Description: "Trigger deadline checker every hour"
       # ScheduleExpression: "rate(1 hour)"
-      Description: "Trigger deadline checker every minute"
-      ScheduleExpression: "rate(1 day)"  # Changed from 1 hour
+      Description: "Trigger deadline checker every minute - will change"
+      ScheduleExpression: "rate(1 minute)"  # Changed from 1 hour, rate(1 day)
       State: ENABLED
       Targets:
         - Arn: !GetAtt DeadlineCheckerFunction.Arn
           Id: "DeadlineCheckerTarget"
+
 
   DeadlineCheckerPermission:
     Type: AWS::Lambda::Permission

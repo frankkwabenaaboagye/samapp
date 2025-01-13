@@ -133,7 +133,7 @@ def create_the_task(event, context):
             'task_id': task_id,
             'name': body['name'],
             'description': body['description'],
-            'status': 'PENDING',
+            'status': 'open', # open by default
             'deadline': body['deadline'],
             'responsibility': body['responsibility'],
             'created_at': datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
@@ -845,7 +845,7 @@ def check_the_deadline(event, context):
     logger.info(f"Event: {json.dumps(event)}")
 
     now = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
-    one_minute_from_now = now + timedelta(minutes=30) # will change this time
+    one_minute_from_now = now + timedelta(minutes=3) # will change this time
     
     logger.info(f"Checking for tasks between {now.isoformat()} and {one_minute_from_now.isoformat()}")
     
