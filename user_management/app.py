@@ -4,8 +4,6 @@ import os
 import logging
 from datetime import datetime, timedelta, timezone
 
-USER_POOL_ID = os.environ['USER_POOL_ID']
-
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
@@ -68,6 +66,8 @@ def onboard_user(event, context):
         email = body['email']
         name = body['name']
         role = body['role']
+
+        USER_POOL_ID = event['userPoolId']
         
         # Create user in Cognito
         response = cognito.admin_create_user(
@@ -104,6 +104,7 @@ def get_the_users(event, context):
     print("event =>")
     print(event)
     try:
+        USER_POOL_ID = event['userPoolId']
         # List users from Cognito User Pool
         response = cognito.list_users(
             UserPoolId=USER_POOL_ID

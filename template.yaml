@@ -95,6 +95,7 @@ Resources:
     Properties:
       CodeUri: user_management/
       Handler: app.post_confirmation_handler
+      FunctionName: !Sub ${AWS::StackName}-PostConfirmationLambda
       Runtime: python3.12
       Architectures:
         - x86_64
@@ -600,7 +601,7 @@ Resources:
             RestApiId:
               Ref: ApiGatewayApi
       Tags:
-        purpose: "testing"
+        purpose: "testing purpose"
 
   ListUserFunction:
     Type: AWS::Serverless::Function
