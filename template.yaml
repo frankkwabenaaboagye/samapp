@@ -288,27 +288,27 @@ Resources:
   TasksAssignmentNotificationTopic:
     Type: AWS::SNS::Topic
     Properties:
-      TopicName: TasksAssignmentNotificationTopic
+      TopicName: !Sub ${AWS::StackName}-TasksAssignmentNotificationTopic
       
   TasksDeadlineNotificationTopic:
     Type: AWS::SNS::Topic
     Properties:
-      TopicName: TasksDeadlineNotificationTopic
+      TopicName: !Sub ${AWS::StackName}-TasksDeadlineNotificationTopic
 
   ClosedTasksNotificationTopic:
     Type: AWS::SNS::Topic
     Properties:
-      TopicName: ClosedTasksNotificationTopic
+      TopicName: !Sub ${AWS::StackName}-ClosedTasksNotificationTopic
 
   ReopenedTasksNotificationTopic:
     Type: AWS::SNS::Topic
     Properties:
-      TopicName: ReopenedTasksNotificationTopic
+      TopicName: !Sub ${AWS::StackName}-ReopenedTasksNotificationTopic
 
   TasksCompletionNotificationTopic:
     Type: AWS::SNS::Topic
     Properties:
-      TopicName: TasksCompletionNotificationTopic
+      TopicName: !Sub ${AWS::StackName}-TasksCompletionNotificationTopic
     
   # User Pool Client
   UserPoolClient:
@@ -828,7 +828,7 @@ Resources:
   ExpiredTasksDLQ:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: ExpiredTasksDLQ
+      QueueName: !Sub ${AWS::StackName}-ExpiredTasksDLQ
   
   # SQS Queue for expired tasks
   ExpiredTasksQueue:
