@@ -89,6 +89,7 @@ Resources:
           RequireUppercase: true
       LambdaConfig:
         PostConfirmation: !GetAtt PostConfirmationLambda.Arn
+        CustomMessage: !GetAtt CustomMessageFunction.Arn
 
   PostConfirmationLambda:
     Type: AWS::Serverless::Function
@@ -588,8 +589,7 @@ Resources:
         - x86_64
       Environment:
         Variables:
-          USER_POOL_ID: !Ref CognitoUserPool
-          USER_POOL_CLIENT_ID: !Ref UserPoolClient
+          SYSTEM_URL: !Ref SystemUrl
       Policies:
         - CognitoUserPoolAdminPolicy: {}
       Events:
@@ -601,7 +601,37 @@ Resources:
             RestApiId:
               Ref: ApiGatewayApi
       Tags:
-        purpose: "testing purpose"
+        purpose: "testing"
+
+  CustomMessageFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: user_management/
+      Handler: app.custom_message
+      Runtime: python3.12
+      Architectures:
+        - x86_64
+      Timeout: 100
+      Environment:
+        Variables:
+          # Add any environment variables needed
+          POWERTOOLS_SERVICE_NAME: custom-message
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - cognito-idp:*
+              Resource: '*'  # this can change
+
+  # Add permission for Cognito to invoke the Lambda
+  CustomMessagePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt CustomMessageFunction.Arn
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt CognitoUserPool.Arn
 
   ListUserFunction:
     Type: AWS::Serverless::Function

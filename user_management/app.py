@@ -58,6 +58,36 @@ def lambda_handler(event, context):
     }
 
 
+def custom_message(event, context):
+    if event['triggerSource'] == 'CustomMessage_AdminCreateUser':
+        # Get user attributes
+        user_name = event['request']['userAttributes'].get('name', 'User')
+        temp_password = event['request']['codeParameter']
+        
+        # Customize your email message
+        custom_message = f"""
+            Hello {user_name},
+
+            Welcome to our Task Management System! Your account has been created.
+
+            Your temporary login credentials are:
+            Username: {event['request']['usernameParameter']}
+            Temporary Password: {temp_password}
+
+            Please login at our application and change your password on first sign in.
+
+            Log in link = http://localhost:4200/home
+
+            Best regards,
+            TMS Team
+            """
+        
+        # Set the custom message
+        event['response']['emailMessage'] = custom_message
+        event['response']['emailSubject'] = "Welcome to TMS - Your Account Details"
+    
+    return event
+
 
 
 def onboard_user(event, context):
@@ -70,6 +100,7 @@ def onboard_user(event, context):
         USER_POOL_ID = event['userPoolId']
         
         # Create user in Cognito
+        # Create user in Cognito with custom message configuration
         response = cognito.admin_create_user(
             UserPoolId=USER_POOL_ID,
             Username=email,
@@ -78,7 +109,8 @@ def onboard_user(event, context):
                 {'Name': 'name', 'Value': name},
                 {'Name': 'custom:role', 'Value': role}
             ],
-            DesiredDeliveryMediums=['EMAIL']
+            DesiredDeliveryMediums=['EMAIL'],
+            MessageAction='SUPPRESS'  # This allows custom message trigger to handle the email
         )
         
         # Add user to appropriate group
