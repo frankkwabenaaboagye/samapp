@@ -844,17 +844,18 @@ def check_the_deadline(event, context):
     logger.info("Deadline checker started")
     logger.info(f"Event: {json.dumps(event)}")
 
-    now = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
+    # now = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
+    now = datetime.now(timezone.utc)
     one_minute_from_now = now + timedelta(minutes=3) # will change this time
     
-    logger.info(f"Checking for tasks between {now.isoformat()} and {one_minute_from_now.isoformat()}")
+    logger.info(f"Checking for tasks between {now.replace(tzinfo=None).isoformat()} and {one_minute_from_now.replace(tzinfo=None).isoformat()}")
     
     try:
         # Check for tasks approaching deadline (1 minute warning)
         approaching_deadline = table.scan(
             FilterExpression=Attr('deadline').between(
-                now.isoformat(),
-                one_minute_from_now.isoformat()
+                now.replace(tzinfo=None).isoformat(),
+                one_minute_from_now.replace(tzinfo=None).isoformat()
             ) & Attr('status').ne('expired')
         )
         
@@ -868,7 +869,7 @@ def check_the_deadline(event, context):
         
         # Check for expired tasks
         expired_tasks_response = table.scan(
-            FilterExpression=Attr('deadline').lt(now.isoformat()) & 
+            FilterExpression=Attr('deadline').lt(now.replace(tzinfo=None).isoformat()) & 
                             Attr('status').ne('expired')
         )
         
