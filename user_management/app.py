@@ -96,8 +96,9 @@ def onboard_user(event, context):
         email = body['email']
         name = body['name']
         role = body['role']
-
-        USER_POOL_ID = event['userPoolId']
+        
+              
+        USER_POOL_ID = os.environ['USER_POOL_ID']
         
         # Create user in Cognito
         # Create user in Cognito with custom message configuration

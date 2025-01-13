@@ -590,6 +590,7 @@ Resources:
       Environment:
         Variables:
           SYSTEM_URL: !Ref SystemUrl
+          USER_POOL_ID: !Ref CognitoUserPool
       Policies:
         - CognitoUserPoolAdminPolicy: {}
       Events:
@@ -601,7 +602,7 @@ Resources:
             RestApiId:
               Ref: ApiGatewayApi
       Tags:
-        purpose: "testing"
+        purpose: "testing purpose"
 
   CustomMessageFunction:
     Type: AWS::Serverless::Function
