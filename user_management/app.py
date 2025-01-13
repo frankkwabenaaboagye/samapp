@@ -59,32 +59,41 @@ def lambda_handler(event, context):
 
 
 def custom_message(event, context):
-    if event['triggerSource'] == 'CustomMessage_AdminCreateUser':
-        # Get user attributes
-        user_name = event['request']['userAttributes'].get('name', 'User')
-        temp_password = event['request']['codeParameter']
-        
-        # Customize your email message
-        custom_message = f"""
-            Hello {user_name},
+    logger.info(f"Event received: {event}")  # Add logging
+    
+    # Handle different trigger sources
+    if event['triggerSource'] in ['CustomMessage_AdminCreateUser', 'CustomMessage_ResendCode']:
+        try:
+            # Get user attributes
+            user_name = event['request']['userAttributes'].get('name', 'User')
+            temp_password = event['request']['codeParameter']
+            
+            # Customize your email message
+            custom_message = f"""
+Hello {user_name},
 
-            Welcome to our Task Management System! Your account has been created.
+Welcome to our Task Management System! Your account has been created.
 
-            Your temporary login credentials are:
-            Username: {event['request']['usernameParameter']}
-            Temporary Password: {temp_password}
+Your temporary login credentials are:
+Username: {event['request']['usernameParameter']}
+Temporary Password: {temp_password}
 
-            Please login at our application and change your password on first sign in.
+Please login at our application and change your password on first sign in.
 
-            Log in link = http://localhost:4200/home
+Log in link = http://localhost:4200/home
 
-            Best regards,
-            TMS Team
+Best regards,
+TMS Team
             """
-        
-        # Set the custom message
-        event['response']['emailMessage'] = custom_message
-        event['response']['emailSubject'] = "Welcome to TMS - Your Account Details"
+            
+            # Set the custom message
+            event['response']['emailMessage'] = custom_message
+            event['response']['emailSubject'] = "Welcome to TMS - Your Account Details"
+            
+            logger.info("Custom message set successfully")
+        except Exception as e:
+            logger.error(f"Error in custom_message: {str(e)}")
+            raise e
     
     return event
 
@@ -110,8 +119,7 @@ def onboard_user(event, context):
                 {'Name': 'name', 'Value': name},
                 {'Name': 'custom:role', 'Value': role}
             ],
-            DesiredDeliveryMediums=['EMAIL'],
-            MessageAction='SUPPRESS'  # This allows custom message trigger to handle the email
+            DesiredDeliveryMediums=['EMAIL']
         )
         
         # Add user to appropriate group

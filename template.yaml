@@ -90,6 +90,8 @@ Resources:
       LambdaConfig:
         PostConfirmation: !GetAtt PostConfirmationLambda.Arn
         CustomMessage: !GetAtt CustomMessageFunction.Arn
+      EmailConfiguration:
+        EmailSendingAccount: "COGNITO_DEFAULT"
 
   PostConfirmationLambda:
     Type: AWS::Serverless::Function
@@ -609,6 +611,8 @@ Resources:
     Properties:
       CodeUri: user_management/
       Handler: app.custom_message
+      # add function name
+      FunctionName: !Sub ${AWS::StackName}-CustomMessageFunction
       Runtime: python3.12
       Architectures:
         - x86_64
@@ -623,7 +627,7 @@ Resources:
             - Effect: Allow
               Action:
                 - cognito-idp:*
-              Resource: '*'  # this can change
+              Resource: '*'  # this can change to !GetAtt CognitoUserPool.Arn
 
   # Add permission for Cognito to invoke the Lambda
   CustomMessagePermission:
