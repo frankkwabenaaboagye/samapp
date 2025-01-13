@@ -801,6 +801,7 @@ Resources:
     Properties:
       CodeUri: hello_world/
       Handler: app.reopen_the_task
+      FunctionName: !Sub ${AWS::StackName}-ReopenTaskFunction
       Runtime: python3.12
       Architectures:
         - x86_64
@@ -834,7 +835,7 @@ Resources:
   ExpiredTasksQueue:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: ExpiredTasksQueue
+      QueueName: !Sub ${AWS::StackName}-ExpiredTasksQueue
       VisibilityTimeout: 300
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt ExpiredTasksDLQ.Arn
@@ -960,6 +961,7 @@ Resources:
     Properties:
       CodeUri: hello_world/
       Handler: app.expired_tasks_processor
+      FunctionName: !Sub ${AWS::StackName}-ExpiredTasksProcessor
       Runtime: python3.12
       Architectures:
         - x86_64
@@ -980,7 +982,7 @@ Resources:
   TaskAssignmentQueue:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: TaskAssignmentQueue
+      QueueName: !Sub ${AWS::StackName}-TaskAssignmentQueue
       VisibilityTimeout: 300
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt TaskDLQ.Arn
