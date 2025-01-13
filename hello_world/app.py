@@ -150,24 +150,25 @@ def create_the_task(event, context):
             MessageBody=json.dumps(task)
         )
 
-        # Publish to SNS topic with filtering
-        sns_response = sns.publish(
-            TopicArn=os.environ['ASSIGNMENT_TOPIC_ARN'],
-            Message=json.dumps({
-                'default': json.dumps(task),
-                'email': f"New task assigned: {task['name']}\nDescription: {task['description']}\nDeadline: {task['deadline']}"
-            }),
-            MessageStructure='json',
-            MessageAttributes={
-                'responsibility': {
-                    'DataType': 'String',
-                    'StringValue': task['responsibility']
-                }
-            }
-        )
+        # Publish to SNS topic with filtering - Redundant
+        
+        # sns_response = sns.publish(
+        #     TopicArn=os.environ['ASSIGNMENT_TOPIC_ARN'],
+        #     Message=json.dumps({
+        #         'default': json.dumps(task),
+        #         'email': f"New task assigned: {task['name']}\nDescription: {task['description']}\nDeadline: {task['deadline']}"
+        #     }),
+        #     MessageStructure='json',
+        #     MessageAttributes={
+        #         'responsibility': {
+        #             'DataType': 'String',
+        #             'StringValue': task['responsibility']
+        #         }
+        #     }
+        # )
 
-        print("response from sns = ")
-        print(sns_response)
+        # print("response from sns = ")
+        # print(sns_response)
         
         return {
             "statusCode": 200,
