@@ -576,7 +576,7 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       Policies:
-        - PolicyName: OnboardUserPolicy
+        - PolicyName: !Sub ${AWS::StackName}-OnboardUserPolicy
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -586,6 +586,10 @@ Resources:
                   - cognito-idp:AdminAddUserToGroup
                   - cognito-idp:ListUsers
                 Resource: !GetAtt CognitoUserPool.Arn
+              - Effect: Allow
+                Action:
+                  - states:StartExecution
+                Resource: !GetAtt UserSubscriptionWorkflow.Arn
 
   OnboardUserFunction:
     Type: AWS::Serverless::Function
@@ -627,7 +631,7 @@ Resources:
             RestApiId:
               Ref: ApiGatewayApi
       Tags:
-        purpose: "testing"
+        purpose: "for testing only"
 
   CustomMessageFunction:
     Type: AWS::Serverless::Function
