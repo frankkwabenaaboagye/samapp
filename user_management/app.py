@@ -129,6 +129,19 @@ def onboard_user(event, context):
             Username=email,
             GroupName=group_name
         )
+
+        try:
+            # Start the parallel state machine with the email since it is the admin
+            response = sfn.start_execution(
+                stateMachineArn=os.environ['SUBSCRIPTION_WORKFLOW_ARN'],
+                input=json.dumps({
+                    'email': email
+                })
+            )
+            print(f"Successfully started subscription workflow: {response['executionArn']}")
+        
+        except Exception as e:
+            print(f"Error starting subscription workflow: {str(e)}")
         
         return {
             "statusCode": 200,

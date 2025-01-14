@@ -601,6 +601,7 @@ Resources:
         Variables:
           SYSTEM_URL: !Ref SystemUrl
           USER_POOL_ID: !Ref CognitoUserPool
+          SUBSCRIPTION_WORKFLOW_ARN: !Ref UserSubscriptionWorkflow
       Policies:
         - CognitoUserPoolAdminPolicy: {}
       Events:
@@ -612,7 +613,7 @@ Resources:
             RestApiId:
               Ref: ApiGatewayApi
       Tags:
-        purpose: "testing purpose"
+        purpose: "testing"
 
   CustomMessageFunction:
     Type: AWS::Serverless::Function
