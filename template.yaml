@@ -934,9 +934,9 @@ Resources:
     Type: AWS::Events::Rule
     Properties:
       # Description: "Trigger deadline checker every hour"
-      # ScheduleExpression: "rate(1 hour)"
-      Description: "Trigger deadline checker every minute - will change"
-      ScheduleExpression: "rate(1 hour)" # Changed from 1 hour, rate(1 day)
+      # ScheduleExpression: "rate(1 hour)", "rate(5 minutes)", rate(1 min)
+      Description: "Trigger deadline checker every minute"
+      ScheduleExpression: "rate(1 min)" # Changed from 1 hour, rate(1 day)
       State: ENABLED
       Targets:
         - Arn: !GetAtt DeadlineCheckerFunction.Arn
