@@ -730,7 +730,7 @@ Resources:
             RestApiId:
               Ref: ApiGatewayApi
       Tags:
-        purpose: "testing"
+        purpose: "testing purpose"
 
   GetTasksFunction:
     Type: AWS::Serverless::Function

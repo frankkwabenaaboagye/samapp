@@ -159,7 +159,9 @@ def get_the_users(event, context):
     print("event =>")
     print(event)
     try:
-        USER_POOL_ID = event['userPoolId']
+
+        USER_POOL_ID = os.environ['USER_POOL_ID']
+
         # List users from Cognito User Pool
         response = cognito.list_users(
             UserPoolId=USER_POOL_ID
