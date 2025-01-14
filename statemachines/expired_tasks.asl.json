@@ -28,9 +28,9 @@
                 "ReturnValues": "ALL_NEW"
             },
             "ResultPath": "$.dynamodbResult",
-            "Next": "PrepareNotification"
+            "Next": "PrepareNotifications"
         },
-        "PrepareNotification": {
+        "PrepareNotifications": {
             "Type": "Pass",
             "Parameters": {
                 "task_id.$": "$.dynamodbResult.Attributes.task_id.S",
@@ -38,68 +38,144 @@
                 "responsibility.$": "$.dynamodbResult.Attributes.responsibility.S",
                 "status": "expired",
                 "expired_at.$": "$.dynamodbResult.Attributes.expired_at.S",
-                "messageData": {
-                    "task_id.$": "$.dynamodbResult.Attributes.task_id.S",
-                    "name.$": "$.dynamodbResult.Attributes.name.S",
-                    "status": "expired",
-                    "message": "Task has expired",
-                    "expired_at.$": "$.dynamodbResult.Attributes.expired_at.S",
-                    "responsibility.$": "$.dynamodbResult.Attributes.responsibility.S"
-                }
-            },
-            "Next": "CreateEmailMessage"
-        },
-        "CreateEmailMessage": {
-            "Type": "Pass",
-            "Parameters": {
-                "emailBody": {
-                    "Fn::Join": [
-                        "",
-                        [
-                            "Task Expired\n\nTask Name: ",
-                            {
-                                "$": "$.name"
-                            },
-                            "\nTask ID: ",
-                            {
-                                "$": "$.task_id"
-                            },
-                            "\nAssigned To: ",
-                            {
-                                "$": "$.responsibility"
-                            },
-                            "\nExpired At: ",
-                            {
-                                "$": "$.expired_at"
-                            },
-                            "\n\nThe task has been marked as expired due to passing its deadline."
-                        ]
-                    ]
-                },
-                "defaultMessage.$": "States.JsonToString($.messageData)",
-                "responsibility.$": "$.responsibility"
-            },
-            "Next": "NotifyUsers"
-        },
-        "NotifyUsers": {
-            "Type": "Task",
-            "Resource": "arn:aws:states:::sns:publish",
-            "Parameters": {
-                "TopicArn": "${ClosedTasksNotificationTopic}",
-                "Message": {
-                    "default.$": "$.defaultMessage",
-                    "email.$": "$.emailBody"
-                },
-                "MessageStructure": "json",
-                "MessageAttributes": {
-                    "responsibility": {
-                        "DataType": "String",
-                        "StringValue.$": "$.responsibility"
+                "notifications": {
+                    "user": {
+                        "task_id.$": "$.dynamodbResult.Attributes.task_id.S",
+                        "name.$": "$.dynamodbResult.Attributes.name.S",
+                        "status": "expired",
+                        "message": "Task has expired",
+                        "expired_at.$": "$.dynamodbResult.Attributes.expired_at.S",
+                        "responsibility.$": "$.dynamodbResult.Attributes.responsibility.S"
+                    },
+                    "admin": {
+                        "task_id.$": "$.dynamodbResult.Attributes.task_id.S",
+                        "name.$": "$.dynamodbResult.Attributes.name.S",
+                        "status": "expired",
+                        "message": "Task has expired - Admin Notification",
+                        "expired_at.$": "$.dynamodbResult.Attributes.expired_at.S",
+                        "responsibility.$": "$.dynamodbResult.Attributes.responsibility.S"
                     }
                 }
             },
+            "Next": "ParallelNotifications"
+        },
+        "ParallelNotifications": {
+            "Type": "Parallel",
+            "Branches": [
+                {
+                    "StartAt": "CreateUserEmailMessage",
+                    "States": {
+                        "CreateUserEmailMessage": {
+                            "Type": "Pass",
+                            "Parameters": {
+                                "emailBody": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "Task Expired\n\nTask Name: ",
+                                            {
+                                                "$": "$.name"
+                                            },
+                                            "\nTask ID: ",
+                                            {
+                                                "$": "$.task_id"
+                                            },
+                                            "\nAssigned To: ",
+                                            {
+                                                "$": "$.responsibility"
+                                            },
+                                            "\nExpired At: ",
+                                            {
+                                                "$": "$.expired_at"
+                                            },
+                                            "\n\nThe task has been marked as expired due to passing its deadline."
+                                        ]
+                                    ]
+                                },
+                                "defaultMessage.$": "States.JsonToString($.notifications.user)",
+                                "responsibility.$": "$.responsibility"
+                            },
+                            "Next": "NotifyUser"
+                        },
+                        "NotifyUser": {
+                            "Type": "Task",
+                            "Resource": "arn:aws:states:::sns:publish",
+                            "Parameters": {
+                                "TopicArn": "${ClosedTasksNotificationTopic}",
+                                "Message": {
+                                    "default.$": "$.defaultMessage",
+                                    "email.$": "$.emailBody"
+                                },
+                                "MessageStructure": "json",
+                                "MessageAttributes": {
+                                    "responsibility": {
+                                        "DataType": "String",
+                                        "StringValue.$": "$.responsibility"
+                                    }
+                                }
+                            },
+                            "End": true
+                        }
+                    }
+                },
+                {
+                    "StartAt": "CreateAdminEmailMessage",
+                    "States": {
+                        "CreateAdminEmailMessage": {
+                            "Type": "Pass",
+                            "Parameters": {
+                                "emailBody": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "[ADMIN NOTIFICATION] Task Expired\n\nTask Name: ",
+                                            {
+                                                "$": "$.name"
+                                            },
+                                            "\nTask ID: ",
+                                            {
+                                                "$": "$.task_id"
+                                            },
+                                            "\nAssigned To: ",
+                                            {
+                                                "$": "$.responsibility"
+                                            },
+                                            "\nExpired At: ",
+                                            {
+                                                "$": "$.expired_at"
+                                            },
+                                            "\n\nThis task has expired and requires administrative attention."
+                                        ]
+                                    ]
+                                },
+                                "defaultMessage.$": "States.JsonToString($.notifications.admin)",
+                                "responsibility": "admin"
+                            },
+                            "Next": "NotifyAdmin"
+                        },
+                        "NotifyAdmin": {
+                            "Type": "Task",
+                            "Resource": "arn:aws:states:::sns:publish",
+                            "Parameters": {
+                                "TopicArn": "${ClosedTasksNotificationTopic}",
+                                "Message": {
+                                    "default.$": "$.defaultMessage",
+                                    "email.$": "$.emailBody"
+                                },
+                                "MessageStructure": "json",
+                                "MessageAttributes": {
+                                    "responsibility": {
+                                        "DataType": "String",
+                                        "StringValue": "admin"
+                                    }
+                                }
+                            },
+                            "End": true
+                        }
+                    }
+                }
+            ],
             "End": true
         }
     }
-  }
-  
+}

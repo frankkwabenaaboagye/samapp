@@ -131,11 +131,12 @@ def onboard_user(event, context):
         )
 
         try:
-            # Start the parallel state machine with the email since it is the admin
+            # Start the parallel state machine 
             response = sfn.start_execution(
                 stateMachineArn=os.environ['SUBSCRIPTION_WORKFLOW_ARN'],
                 input=json.dumps({
-                    'email': email
+                    'email': email,
+                    'role': group_name
                 })
             )
             print(f"Successfully started subscription workflow: {response['executionArn']}")
@@ -234,7 +235,8 @@ def post_confirmation_handler(event, context):
         response = sfn.start_execution(
             stateMachineArn=os.environ['SUBSCRIPTION_WORKFLOW_ARN'],
             input=json.dumps({
-                'email': user_email
+                'email': user_email,
+                'role': 'TeamMember'
             })
         )
         print(f"Successfully started subscription workflow: {response['executionArn']}")
@@ -283,6 +285,7 @@ def subscribe_the_user(event, context):
         topic_arn = event['TopicArn']
         protocol = event['Protocol']
         endpoint = event['Endpoint']
+        role = event.get('Role', 'TeamMember') # Default to teammember if not specified
         
         logger.info(f"Subscribing {endpoint} to topic {topic_arn}")
         
@@ -295,27 +298,24 @@ def subscribe_the_user(event, context):
         )
         
         subscription_arn = response['SubscriptionArn']
-        
-        # If this is the assignment notification topic, set up filtering
-        if topic_arn.endswith('TasksAssignmentNotificationTopic'):
-            logger.info("Setting up filter policy for assignment notifications")
+
+        # Handle admin subscriptions
+        if role.lower() == 'admin' and topic_arn.endswith(('ClosedTasksNotificationTopic', 'TasksCompletionNotificationTopic')):
+            logger.info("Setting up admin filter policy")
             sns.set_subscription_attributes(
                 SubscriptionArn=subscription_arn,
                 AttributeName='FilterPolicy',
-                AttributeValue=json.dumps({
-                    'responsibility': [endpoint]  # Filter by assigned user's email
-                })
+                AttributeValue=json.dumps({'responsibility': ['admin']})
             )
 
-        # If this is the deadline notification topic, set up filtering
-        if topic_arn.endswith('TasksDeadlineNotificationTopic'):
-            logger.info("Setting up filter policy for deadline notifications")
+        # If this is the assignment notification topic, set up filtering
+        # Handle teammember subscriptions
+        elif role.lower() == 'teammember':
+            logger.info("Setting up TeamMember filter policy")
             sns.set_subscription_attributes(
                 SubscriptionArn=subscription_arn,
                 AttributeName='FilterPolicy',
-                AttributeValue=json.dumps({
-                    'responsibility': [endpoint]  # Filter by assigned user's email
-                })
+                AttributeValue=json.dumps({'responsibility': [endpoint]})  # Filter by user's email
             )
         
         return {

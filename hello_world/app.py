@@ -960,18 +960,18 @@ def check_the_deadline(event, context):
         #  commenting out expired task for now
 
         # Check for expired tasks
-        # expired_tasks_response = table.scan(
-        #     FilterExpression=Attr('deadline').lt(now.replace(tzinfo=None).isoformat()) & 
-        #                     Attr('status').ne('expired')
-        # )
+        expired_tasks_response = table.scan(
+            FilterExpression=Attr('deadline').lt(now.replace(tzinfo=None).isoformat()) & 
+                            Attr('status').ne('expired')
+        )
         
-        # expired_tasks = expired_tasks_response.get('Items', [])
-        # logger.info(f"Found {len(expired_tasks)} expired tasks")
+        expired_tasks = expired_tasks_response.get('Items', [])
+        logger.info(f"Found {len(expired_tasks)} expired tasks")
         
         # # Queue expired tasks
-        # for task in expired_tasks:
-        #     logger.info(f"Processing expired task: {task['task_id']}")
-        #     queue_expired_task(task)
+        for task in expired_tasks:
+            logger.info(f"Processing expired task: {task['task_id']}")
+            queue_expired_task(task)
 
         return {
             'statusCode': 200,

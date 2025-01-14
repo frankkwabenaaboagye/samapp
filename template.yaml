@@ -145,9 +145,44 @@ Resources:
           - CloudWatchLogsLogGroup:
               LogGroupArn: !GetAtt UserSubscriptionWorkflowLogGroup.Arn
       Definition:
-        StartAt: SubscribeToTopics
+        StartAt: DetermineUserType
         States:
-          SubscribeToTopics:
+          DetermineUserType:
+            Type: Choice
+            Choices:
+              - Variable: "$.role"
+                StringEquals: "Admin"
+                Next: AdminSubscriptions
+            Default: RegularUserSubscriptions
+
+          AdminSubscriptions:
+            Type: Parallel
+            Branches:
+              - StartAt: SubscribeToClosed
+                States:
+                  SubscribeToClosed:
+                    Type: Task
+                    Resource: !GetAtt SubscribeUserToTopicFunction.Arn
+                    Parameters:
+                      "TopicArn": !Ref ClosedTasksNotificationTopic
+                      "Protocol": "email"
+                      "Endpoint.$": "$.email"
+                      "Role": "Admin"
+                    End: true
+              - StartAt: SubscribeToCompletion
+                States:
+                  SubscribeToCompletion:
+                    Type: Task
+                    Resource: !GetAtt SubscribeUserToTopicFunction.Arn
+                    Parameters:
+                      "TopicArn": !Ref TasksCompletionNotificationTopic
+                      "Protocol": "email"
+                      "Endpoint.$": "$.email"
+                      "Role": "Admin"
+                    End: true
+            End: true
+
+          RegularUserSubscriptions:
             Type: Parallel
             Branches:
               - StartAt: SubscribeToAssignment
@@ -159,6 +194,7 @@ Resources:
                       "TopicArn": !Ref TasksAssignmentNotificationTopic
                       "Protocol": "email"
                       "Endpoint.$": "$.email"
+                      "Role.$": "$.role"
                     End: true
               - StartAt: SubscribeToDeadline
                 States:
@@ -169,6 +205,7 @@ Resources:
                       "TopicArn": !Ref TasksDeadlineNotificationTopic
                       "Protocol": "email"
                       "Endpoint.$": "$.email"
+                      "Role.$": "$.role"
                     End: true
               - StartAt: SubscribeToClosed
                 States:
@@ -179,6 +216,7 @@ Resources:
                       "TopicArn": !Ref ClosedTasksNotificationTopic
                       "Protocol": "email"
                       "Endpoint.$": "$.email"
+                      "Role.$": "$.role"
                     End: true
               - StartAt: SubscribeToReopened
                 States:
@@ -189,6 +227,7 @@ Resources:
                       "TopicArn": !Ref ReopenedTasksNotificationTopic
                       "Protocol": "email"
                       "Endpoint.$": "$.email"
+                      "Role.$": "$.role"
                     End: true
               - StartAt: SubscribeToCompletion
                 States:
@@ -199,8 +238,10 @@ Resources:
                       "TopicArn": !Ref TasksCompletionNotificationTopic
                       "Protocol": "email"
                       "Endpoint.$": "$.email"
+                      "Role.$": "$.role"
                     End: true
             End: true
+
 
   UserSubscriptionWorkflowRole:
     Type: AWS::IAM::Role
@@ -1038,11 +1079,11 @@ Resources:
         - StepFunctionsExecutionPolicy:
             StateMachineName: !GetAtt ExpiredTasksWorkflow.Name
       Events:
-        SQSEvent:
+        SQSExpiredTaskEvent:
           Type: SQS
           Properties:
             Queue: !GetAtt ExpiredTasksQueue.Arn
-            BatchSize: 1
+            BatchSize: 10
 
   # SQS Queue for Task Assignments
   TaskAssignmentQueue:
