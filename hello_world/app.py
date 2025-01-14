@@ -563,6 +563,98 @@ def process_the_task_assignment(event, context):
         }
 
 
+def publish_to_sns_task_deadline(task, email_message):
+
+    message = {
+        'default': json.dumps(task),
+        'email': email_message
+    }
+
+    try:
+        response = sns.publish(
+            TopicArn=os.environ['DEADLINE_TOPIC_ARN'],
+            Message=json.dumps(message),
+            MessageStructure='json',
+            MessageAttributes={
+                'responsibility': {
+                    'DataType': 'String',
+                    'StringValue': task['responsibility']
+                },
+                'taskId': {
+                    'DataType': 'String',
+                    'StringValue': str(task.get('task_id', 'unknown'))
+                },
+                'taskStatus': {
+                    'DataType': 'String',
+                    'StringValue': task['status']
+                }
+            }
+        )
+
+        return response;
+    
+    except Exception as e:
+        print(f"Error publishing to SNS: {str(e)}")
+        raise
+    
+
+    
+
+
+def process_the_deadline_notification(event, context):
+
+    print("processing deadline notification...")
+
+    processed_tasks = []
+    failed_tasks = []
+
+    try:
+    
+        for record in event['Records']:
+            try:
+                task = json.loads(record['body'])
+
+                email_message = create_deadline_warning_email(task)
+                
+                response = publish_to_sns_task_deadline(task, email_message)
+                
+                processed_tasks.append({
+                    'taskId': task.get('task_id', 'unknown'),
+                    'messageId': response['MessageId']
+                })
+            except Exception as e:
+                failed_tasks.append({
+                    'taskId': task.get('task_id', 'unknown'),
+                    'error': str(e)
+                })
+                continue
+        
+        # Prepare response
+        response_body = {
+            'message': 'Task deadline processing completed',
+            'timestamp': datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
+            'processed': processed_tasks,
+            'failed': failed_tasks
+        }
+
+        status_code = 200 if not failed_tasks else 207  # Use 207 if some tasks failed
+
+        return {
+            'statusCode': status_code,
+            'body': json.dumps(response_body)
+        }
+
+    except Exception as e:
+        logger.error(f"Critical error in task processing: {str(e)}")
+        return {
+            'statusCode': 500,
+            'body': json.dumps({
+                'error': str(e),
+                'timestamp': datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
+            })
+        }
+        
+
 def handle_dead_letter_queue(event, context):
     """Handle failed messages from DLQ"""
     logger.info("Processing messages from DLQ...")
@@ -794,30 +886,27 @@ def create_deadline_warning_email(task):
     """
 
 
-def send_deadline_warning(task):
+def send_to_SQS(task):
     try:
-        message = {
-            'default': json.dumps({
-                'task_id': task['task_id'],
-                'name': task['name'],
-                'deadline': task['deadline'],
-                'message': 'Task deadline approaching in 1 minute'
-            }),
-            'email': create_deadline_warning_email(task)
-        }
         
-        response = sns.publish(
-            TopicArn=os.environ['DEADLINE_TOPIC_ARN'],
-            Message=json.dumps(message),
-            MessageStructure='json',
-            MessageAttributes={
-                'responsibility': {
-                    'DataType': 'String',
-                    'StringValue': task['responsibility']
-                }
-            }
+        # response = sns.publish(
+        #     TopicArn=os.environ['DEADLINE_TOPIC_ARN'],
+        #     Message=json.dumps(message),
+        #     MessageStructure='json',
+        #     MessageAttributes={
+        #         'responsibility': {
+        #             'DataType': 'String',
+        #             'StringValue': task['responsibility']
+        #         }
+        #     }
+        # )
+        # logger.info(f"Sent deadline warning for task {task['task_id']}, SNS MessageId: {response['MessageId']}")
+
+        sqs.send_message(
+            QueueUrl=os.environ['DEADLINE_QUEUE_URL'],
+            MessageBody=json.dumps(task)
         )
-        logger.info(f"Sent deadline warning for task {task['task_id']}, SNS MessageId: {response['MessageId']}")
+
     except Exception as e:
         logger.error(f"Error sending deadline warning for task {task['task_id']}: {str(e)}", exc_info=True)
         raise
@@ -866,28 +955,30 @@ def check_the_deadline(event, context):
         # Send warnings for approaching deadlines
         for task in tasks_approaching:
             logger.info(f"Processing warning for task: {task['task_id']}")
-            send_deadline_warning(task)
+            send_to_SQS(task) # send to SQS
         
+        #  commenting out expired task for now
+
         # Check for expired tasks
-        expired_tasks_response = table.scan(
-            FilterExpression=Attr('deadline').lt(now.replace(tzinfo=None).isoformat()) & 
-                            Attr('status').ne('expired')
-        )
+        # expired_tasks_response = table.scan(
+        #     FilterExpression=Attr('deadline').lt(now.replace(tzinfo=None).isoformat()) & 
+        #                     Attr('status').ne('expired')
+        # )
         
-        expired_tasks = expired_tasks_response.get('Items', [])
-        logger.info(f"Found {len(expired_tasks)} expired tasks")
+        # expired_tasks = expired_tasks_response.get('Items', [])
+        # logger.info(f"Found {len(expired_tasks)} expired tasks")
         
-        # Queue expired tasks
-        for task in expired_tasks:
-            logger.info(f"Processing expired task: {task['task_id']}")
-            queue_expired_task(task)
+        # # Queue expired tasks
+        # for task in expired_tasks:
+        #     logger.info(f"Processing expired task: {task['task_id']}")
+        #     queue_expired_task(task)
 
         return {
             'statusCode': 200,
             'body': json.dumps({
                 'message': 'Deadline check completed',
-                'approaching_deadline': len(tasks_approaching),
-                'expired_tasks': len(expired_tasks)
+                'approaching_deadline': len(tasks_approaching)
+                # 'expired_tasks': len(expired_tasks)
             })
         }
     except Exception as e:

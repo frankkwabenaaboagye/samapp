@@ -97,7 +97,7 @@ Resources:
   PostConfirmationLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-PostConfirmationLambda'
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-PostConfirmationLambda-a' # added -a
       RetentionInDays: 30  # Adjust retention period as needed
 
   PostConfirmationLambda:
@@ -728,7 +728,7 @@ Resources:
             RestApiId:
               Ref: ApiGatewayApi
       Tags:
-        purpose: "testing purpose"
+        purpose: "testing"
 
   UpdateTaskFunction:
     Type: AWS::Serverless::Function
@@ -896,16 +896,18 @@ Resources:
       Environment:
         Variables:
           TASKS_TABLE: !Ref TasksTable
-          DEADLINE_TOPIC_ARN: !Ref TasksDeadlineNotificationTopic
+          # DEADLINE_TOPIC_ARN: !Ref TasksDeadlineNotificationTopic
+          DEADLINE_QUEUE_URL: !Ref DeadlineNotificationQueue
           EXPIRED_TASKS_QUEUE: !Ref ExpiredTasksQueue
           SYSTEM_URL: !Ref SystemUrl
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref TasksTable
-        - SNSPublishMessagePolicy:
-            TopicName: !GetAtt TasksDeadlineNotificationTopic.TopicName
+        # - SNSPublishMessagePolicy:
+        #     TopicName: !GetAtt TasksDeadlineNotificationTopic.TopicName
         - SQSSendMessagePolicy:
-            QueueName: !GetAtt ExpiredTasksQueue.QueueName
+            # QueueName: !GetAtt ExpiredTasksQueue.QueueName
+            QueueName: !GetAtt DeadlineNotificationQueue.QueueName
         - CloudWatchLogsFullAccess # Add logging permissions
 
   # EventBridge rule to trigger deadline checker
@@ -915,7 +917,7 @@ Resources:
       # Description: "Trigger deadline checker every hour"
       # ScheduleExpression: "rate(1 hour)"
       Description: "Trigger deadline checker every minute - will change"
-      ScheduleExpression: "rate(1 minute)" # Changed from 1 hour, rate(1 day)
+      ScheduleExpression: "rate(1 hour)" # Changed from 1 hour, rate(1 day)
       State: ENABLED
       Targets:
         - Arn: !GetAtt DeadlineCheckerFunction.Arn
@@ -1033,6 +1035,15 @@ Resources:
         deadLetterTargetArn: !GetAtt TaskDLQ.Arn
         maxReceiveCount: 3
 
+  DeadlineNotificationQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: !Sub ${AWS::StackName}-DeadlineNotificationQueue
+        VisibilityTimeout: 300
+        RedrivePolicy:
+          deadLetterTargetArn: !GetAtt DeadlineNotificationDLQ.Arn
+          maxReceiveCount: 3
+
   # Add SNS Topic Subscription Filter Policies
   TaskAssignmentSubscriptionPolicy:
     Type: AWS::SNS::TopicPolicy
@@ -1076,7 +1087,7 @@ Resources:
           ASSIGNMENT_TOPIC_ARN: !Ref TasksAssignmentNotificationTopic
           SYSTEM_URL: !Ref SystemUrl # Add this to your parameters or hardcode the URL
       Events:
-        SQSEvent:
+        SQSTaskAssignmentEvent:
           Type: SQS
           Properties:
             Queue: !GetAtt TaskAssignmentQueue.Arn
@@ -1087,11 +1098,46 @@ Resources:
         - SQSPollerPolicy:
             QueueName: !GetAtt TaskAssignmentQueue.QueueName
 
+
+  ProcessDeadlineNotificationFunction:
+      Type: AWS::Serverless::Function
+      Properties:
+        CodeUri: hello_world/
+        Handler: app.process_the_deadline_notification
+        Runtime: python3.12
+        Architectures:
+          - x86_64
+        Environment:
+          Variables:
+            DEADLINE_TOPIC_ARN: !Ref TasksDeadlineNotificationTopic
+            SYSTEM_URL: !Ref SystemUrl
+        Events:
+          SQSTaskDeadlineEvent:
+            Type: SQS
+            Properties:
+              Queue: !GetAtt DeadlineNotificationQueue.Arn
+              BatchSize: 10  # Set to 1 to process one notification at a time
+        Policies:
+          - SNSPublishMessagePolicy:
+              TopicName: !GetAtt TasksDeadlineNotificationTopic.TopicName
+          - SQSPollerPolicy:
+              QueueName: !GetAtt DeadlineNotificationQueue.QueueName
+
   # Dead Letter Queue for failed messages
   TaskDLQ:
     Type: AWS::SQS::Queue
     Properties:
+      QueueName: !Sub ${AWS::StackName}-TaskDLQ
       MessageRetentionPeriod: 1209600 # 14 days
+
+  DeadlineNotificationDLQ:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: !Sub ${AWS::StackName}-DeadlineNotificationDLQ
+        MessageRetentionPeriod: 1209600 # 14 days
+
+
+
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function

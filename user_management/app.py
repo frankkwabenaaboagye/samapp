@@ -293,6 +293,17 @@ def subscribe_the_user(event, context):
                     'responsibility': [endpoint]  # Filter by assigned user's email
                 })
             )
+
+        # If this is the deadline notification topic, set up filtering
+        if topic_arn.endswith('TasksDeadlineNotificationTopic'):
+            logger.info("Setting up filter policy for deadline notifications")
+            sns.set_subscription_attributes(
+                SubscriptionArn=subscription_arn,
+                AttributeName='FilterPolicy',
+                AttributeValue=json.dumps({
+                    'responsibility': [endpoint]  # Filter by assigned user's email
+                })
+            )
         
         return {
             'statusCode': 200,
