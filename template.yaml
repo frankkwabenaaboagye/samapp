@@ -939,7 +939,7 @@ Resources:
   ExpiredTasksQueue:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: !Sub ${AWS::StackName}-ExpiredTasksQueue
+      QueueName: !Sub ${AWS::StackName}-ExpiredTasksQueue-a
       VisibilityTimeout: 300
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt ExpiredTasksDLQ.Arn
@@ -1068,7 +1068,7 @@ Resources:
     Properties:
       CodeUri: hello_world/
       Handler: app.expired_tasks_processor
-      FunctionName: !Sub ${AWS::StackName}-ExpiredTasksProcessor
+      FunctionName: !Sub ${AWS::StackName}-ExpiredTasksProcessor-a
       Runtime: python3.12
       Architectures:
         - x86_64
@@ -1079,7 +1079,7 @@ Resources:
         - StepFunctionsExecutionPolicy:
             StateMachineName: !GetAtt ExpiredTasksWorkflow.Name
       Events:
-        SQSExpiredTaskEvent:
+        SQSExpdTaskEvent:
           Type: SQS
           Properties:
             Queue: !GetAtt ExpiredTasksQueue.Arn
