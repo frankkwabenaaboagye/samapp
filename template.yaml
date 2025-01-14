@@ -1079,6 +1079,7 @@ Resources:
     Properties:
       CodeUri: hello_world/
       Handler: app.process_the_task_assignment
+      FunctionName: !Sub ${AWS::StackName}-ProcessTaskAssignmentFunction
       Runtime: python3.12
       Architectures:
         - x86_64
