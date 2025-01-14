@@ -120,6 +120,13 @@ Resources:
               Action:
                 - cognito-idp:AdminAddUserToGroup
                 - cognito-idp:ListUsers
+                - cognito-idp:ListUsersInGroup
+                - cognito-idp:AdminCreateUser
+                - cognito-idp:AdminDeleteUser
+                - cognito-idp:AdminUpdateUserAttributes
+                - cognito-idp:AdminGetUser
+                - cognito-idp:AdminListGroupsForUser
+                - cognito-idp:AdminRemoveUserFromGroup
                 - cognito-idp:*
               Resource: "*"
             - Effect: Allow

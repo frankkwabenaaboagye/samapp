@@ -209,6 +209,42 @@ def get_the_users(event, context):
         }
     
 
+def make_sure_role_exists(user_pool_id, username):
+        
+
+        #----------------------
+    try:
+
+        user_response = cognito.admin_get_user(
+            UserPoolId=user_pool_id,
+            Username=username
+        )
+
+        current_attributes = {attr['Name']: attr['Value'] for attr in user_response['UserAttributes']}
+
+        # Check if all required attributes exist and custom:role is TeamMember
+        if ('email' not in current_attributes or 
+            'name' not in current_attributes or 
+            'custom:role' not in current_attributes or 
+            current_attributes['custom:role'] != 'TeamMember'):
+            
+            # Prepare attributes update maintaining email and name if they exist
+            update_attributes = [
+                {'Name': 'email', 'Value': current_attributes.get('email', username)},
+                {'Name': 'name', 'Value': current_attributes.get('name', username)},
+                {'Name': 'custom:role', 'Value': 'TeamMember'}
+            ]
+            
+            print(f"Updating user attributes for {username}")
+            cognito.admin_update_user_attributes(
+                UserPoolId=user_pool_id,
+                Username=username,
+                UserAttributes=update_attributes
+            )
+            print(f"Successfully updated attributes for user {username}")
+    except Exception as e:
+        print(f"Error in make_sure_role_exists: {str(e)}")
+    
 def post_confirmation_handler(event, context):
     """
     Handles post confirmation tasks:
@@ -219,6 +255,10 @@ def post_confirmation_handler(event, context):
         # Part 1: Add user to TeamMember group
         user_pool_id = event['userPoolId']
         username = event['userName']
+
+        #--------------to make sure role is set
+        make_sure_role_exists(user_pool_id, username)
+
         
         print("Starting part 1: Adding user to TeamMember group")
         # this part has been done remove it
@@ -227,6 +267,8 @@ def post_confirmation_handler(event, context):
             Username=username,
             GroupName='TeamMember'
         )
+
+    
         print(f"Successfully added user {username} to TeamMember group")
 
         # Part 2: Start subscription workflow

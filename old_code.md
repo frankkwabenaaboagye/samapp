@@ -254,3 +254,44 @@ def subscribe_the_user(event, context):
         logger.error(f"Error creating subscription: {str(e)}")
         raise e
 
+===
+        try:
+
+            # Get current user attributes
+            user_response = cognito.admin_get_user(
+                UserPoolId=user_pool_id,
+                Username=username
+            )
+
+            # Convert user attributes to dictionary for easier access
+            current_attributes = {attr['Name']: attr['Value'] for attr in user_response['UserAttributes']}
+
+            # Convert current attributes back to Cognito format, maintaining all existing attributes
+            required_attributes = [
+                {'Name': key, 'Value': value} 
+                for key, value in current_attributes.items()
+            ]
+
+            # Update or add custom:role if needed
+            role_exists = False
+            for attr in required_attributes:
+                if attr['Name'] == 'custom:role':
+                    attr['Value'] = 'TeamMember'
+                    role_exists = True
+                    break
+            
+            if not role_exists:
+                required_attributes.append({
+                    'Name': 'custom:role',
+                    'Value': 'TeamMember'
+                })
+            
+            print(f"Updating user attributes for {username}")
+            cognito.admin_update_user_attributes(
+                UserPoolId=user_pool_id,
+                Username=username,
+                UserAttributes=required_attributes
+            )
+        
+        except Exception as e:
+            print(f"Error in make_sure_role_exists: {str(e)}")
