@@ -935,8 +935,8 @@ Resources:
     Properties:
       # Description: "Trigger deadline checker every hour"
       # ScheduleExpression: "rate(1 hour)", "rate(5 minutes)", rate(1 min)
-      Description: "Trigger deadline checker every minute"
-      ScheduleExpression: "rate(1 minute)" # Changed from 1 hour, rate(1 day)
+      Description: "Trigger deadline checker every three minute"
+      ScheduleExpression: "rate(3 minutes)" # Changed from 1 hour, rate(1 day)
       State: ENABLED
       Targets:
         - Arn: !GetAtt DeadlineCheckerFunction.Arn
