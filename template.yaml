@@ -92,8 +92,17 @@ Resources:
       EmailConfiguration:
         EmailSendingAccount: "COGNITO_DEFAULT"
 
+
+  # First, define the Log Group
+  PostConfirmationLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-PostConfirmationLambda'
+      RetentionInDays: 30  # Adjust retention period as needed
+
   PostConfirmationLambda:
     Type: AWS::Serverless::Function
+    DependsOn: PostConfirmationLogGroup
     Properties:
       CodeUri: user_management/
       Handler: app.post_confirmation_handler
@@ -1038,6 +1047,20 @@ Resources:
               Service: sns.amazonaws.com
             Action: sns:Publish
             Resource: !Ref TasksAssignmentNotificationTopic
+
+  TaskDeadlineSubscriptionPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      Topics:
+        - !Ref TasksDeadlineNotificationTopic
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: sns.amazonaws.com
+            Action: sns:Publish
+            Resource: !Ref TasksDeadlineNotificationTopic
 
   # Lambda function to process the SQS messages
   ProcessTaskAssignmentFunction:
