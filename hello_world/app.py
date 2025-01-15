@@ -782,7 +782,7 @@ def reopen_the_task(event, context):
             }
 
         # Calculate new deadline (current time + 2 minutes)
-        new_deadline = (datetime.now(timezone.utc) + timedelta(minutes=2)).replace(tzinfo=None).isoformat()
+        new_deadline = (datetime.now(timezone.utc) + timedelta(minutes=60)).replace(tzinfo=None).isoformat()
         logger.info(f"New deadline calculated: {new_deadline}")
         
         # Update task status and extend deadline
