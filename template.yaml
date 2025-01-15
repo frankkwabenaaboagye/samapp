@@ -963,7 +963,7 @@ Resources:
       Environment:
         Variables:
           TASKS_TABLE: !Ref TasksTable
-          # DEADLINE_TOPIC_ARN: !Ref TasksDeadlineNotificationTopic
+          DEADLINE_TOPIC_ARN: !Ref TasksDeadlineNotificationTopic
           DEADLINE_QUEUE_URL: !Ref DeadlineNotificationQueue
           EXPIRED_TASKS_QUEUE: !Ref ExpiredTasksQueue
           SYSTEM_URL: !Ref SystemUrl
@@ -975,6 +975,8 @@ Resources:
         - SQSSendMessagePolicy:
             # QueueName: !GetAtt ExpiredTasksQueue.QueueName
             QueueName: !GetAtt DeadlineNotificationQueue.QueueName
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt ExpiredTasksQueue.QueueName 
         - CloudWatchLogsFullAccess # Add logging permissions
 
   # EventBridge rule to trigger deadline checker
