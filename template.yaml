@@ -926,11 +926,13 @@ Resources:
         Variables:
           TASKS_TABLE: !Ref TasksTable
           REOPENED_TOPIC_ARN: !Ref ReopenedTasksNotificationTopic
+          DUMMY_PLACEHOLDER: !Ref DummyPlaceholder # will take it out
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref TasksTable
         - SNSPublishMessagePolicy:
             TopicName: !GetAtt ReopenedTasksNotificationTopic.TopicName
+        - CloudWatchLogsFullAccess # Add logging permissions
       Events:
         ReopenTaskAPI:
           Type: Api
