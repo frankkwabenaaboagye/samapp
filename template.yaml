@@ -48,7 +48,7 @@ Resources:
       Cors:
         AllowMethods: "'POST, GET, PUT, OPTIONS, DELETE'"
         AllowHeaders: "'X-Forwarded-For,Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,access-control-allow-origin,access-control-allow-credentials'"
-        AllowOrigin: "'http://localhost:4200,https://main.d3p2bymp0gir41.amplifyapp.com'"
+        AllowOrigin: "'https://main.d3p2bymp0gir41.amplifyapp.com'"
         AllowCredentials: true
       Auth:
         AddDefaultAuthorizerToCorsPreflight: false
@@ -348,7 +348,7 @@ Resources:
           CLOSED_TOPIC_ARN: !Ref ClosedTasksNotificationTopic
           REOPENED_TOPIC_ARN: !Ref ReopenedTasksNotificationTopic
           COMPLETION_TOPIC_ARN: !Ref TasksCompletionNotificationTopic
-          DUMMY_PLACEHOLDER: !Ref DummyPlaceholder 
+          # DUMMY_PLACEHOLDER: !Ref DummyPlaceholder 
 
   # SNS Topics
   TasksAssignmentNotificationTopic:
@@ -771,7 +771,7 @@ Resources:
             RestApiId:
               Ref: ApiGatewayApi
       Tags:
-        purpose: "testing"
+        purpose: "testing purpose"
 
   CreateTaskFunction:
     Type: AWS::Serverless::Function

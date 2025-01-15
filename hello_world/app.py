@@ -47,7 +47,7 @@ stepfunctions = assignStepFnx()
 
 myHeaders = {
     'Access-Control-Allow-Headers': 'X-Forwarded-For,Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,access-control-allow-origin,access-control-allow-credentials',
-    'Access-Control-Allow-Origin': 'http://localhost:4200,https://main.d3p2bymp0gir41.amplifyapp.com',
+    'Access-Control-Allow-Origin': 'https://main.d3p2bymp0gir41.amplifyapp.com',
     'Access-Control-Allow-Methods': 'POST, GET, PUT, OPTIONS, DELETE',
     'Access-Control-Allow-Credentials': 'true'
 }
