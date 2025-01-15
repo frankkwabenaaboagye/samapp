@@ -218,14 +218,14 @@ def notify_task_completion(task, completed_by):
             }
         }
     )
-    
-    print("admin notified .. sns response is => ", sns_response)
+
+    logger.info("admin notifed!! ...")
+    #logger.info(f"admin notified .. sns response is =>: {json.dumps(sns_response)}")
 
 
 def update_the_task(event, context):
-    print("Event for the update ...")
-    print(event)
-    print("proeceeding to perform update task...")
+    logger.info("Event for the update ...")
+    logger.info(f"Event: {json.dumps(event)}")
 
     try:
         # Get task ID from path parameters
@@ -303,7 +303,7 @@ def update_the_task(event, context):
         
         # If status is changed to 'COMPLETED', notify administrators
         if body.get('status') and (body.get('status') == 'COMPLETED' or body.get('status').lower() == 'completed'):
-            print("notifying admin...")
+            logger.info("notifying the...")
             try:
                 notify_task_completion(current_task, user_email)
             except Exception as e:

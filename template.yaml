@@ -818,13 +818,13 @@ Resources:
           DEADLINE_NOTIFICATION_TOPIC: !Ref TasksDeadlineNotificationTopic
           EXPIRED_TASKS_QUEUE: !Ref ExpiredTasksQueue
           SYSTEM_URL: !Ref SystemUrl
-          DUMMY_PLACEHOLDER: !Ref DummyPlaceholder
       Policies:
         - AWSLambdaBasicExecutionRole
         - DynamoDBCrudPolicy:
             TableName: !Ref TasksTable
         - SNSPublishMessagePolicy:
             TopicName: !GetAtt TasksCompletionNotificationTopic.TopicName
+        - CloudWatchLogsFullAccess # Add logging permissions
       Events:
         UpdateTaskAPI:
           Type: Api
@@ -834,7 +834,7 @@ Resources:
             RestApiId:
               Ref: ApiGatewayApi
       Tags:
-        purpose: "testing"
+        purpose: "testing purpose"
 
   DeleteTaskFunction:
     Type: AWS::Serverless::Function
