@@ -17,6 +17,11 @@ Parameters:
     Description: The URL of my angular frontend application
     Default: "http://localhost:4200"
 
+  DummyPlaceholder:
+    Type: String
+    Description: Dummy placeholder
+    Default: "dummy"
+
 Resources:
   HelloWorldFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
@@ -813,6 +818,7 @@ Resources:
           DEADLINE_NOTIFICATION_TOPIC: !Ref TasksDeadlineNotificationTopic
           EXPIRED_TASKS_QUEUE: !Ref ExpiredTasksQueue
           SYSTEM_URL: !Ref SystemUrl
+          DUMMY_PLACEHOLDER: !Ref DummyPlaceholder
       Policies:
         - AWSLambdaBasicExecutionRole
         - DynamoDBCrudPolicy:
@@ -967,6 +973,7 @@ Resources:
           DEADLINE_QUEUE_URL: !Ref DeadlineNotificationQueue
           EXPIRED_TASKS_QUEUE: !Ref ExpiredTasksQueue
           SYSTEM_URL: !Ref SystemUrl
+          DUMMY_PLACEHOLDER: !Ref DummyPlaceholder # will take it out
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref TasksTable

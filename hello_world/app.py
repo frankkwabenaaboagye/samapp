@@ -207,14 +207,25 @@ def notify_task_completion(task, completed_by):
     }
     
     # Notify administrators
-    sns.publish(
+    sns_response = sns.publish(
         TopicArn=os.environ['TASK_COMPLETION_TOPIC'],
         Message=json.dumps(message),
-        MessageStructure='json'
+        MessageStructure='json',
+        MessageAttributes={
+            'responsibility': {
+                'DataType': 'String',
+                'StringValue': 'admin'
+            }
+        }
     )
+    
+    print("admin notified .. sns response is => ", sns_response)
 
 
 def update_the_task(event, context):
+    print("Event for the update ...")
+    print(event)
+    print("proeceeding to perform update task...")
 
     try:
         # Get task ID from path parameters
@@ -289,9 +300,14 @@ def update_the_task(event, context):
             ExpressionAttributeValues=expr_values
         )
         
+        
         # If status is changed to 'COMPLETED', notify administrators
         if body.get('status') and (body.get('status') == 'COMPLETED' or body.get('status').lower() == 'completed'):
-            notify_task_completion(current_task, user_email)
+            print("notifying admin...")
+            try:
+                notify_task_completion(current_task, user_email)
+            except Exception as e:
+                print(f"Error notifying task completion: {str(e)}")
             
         return {
             'statusCode': 200,
@@ -946,7 +962,8 @@ def check_the_deadline(event, context):
             FilterExpression=Attr('deadline').between(
                 now.replace(tzinfo=None).isoformat(),
                 one_minute_from_now.replace(tzinfo=None).isoformat()
-            ) & Attr('status').ne('expired')
+            ) & Attr('status').ne('expired') & Attr('status').ne('completed')
+
         )
         
         tasks_approaching = approaching_deadline.get('Items', [])
@@ -962,7 +979,7 @@ def check_the_deadline(event, context):
         # Check for expired tasks
         expired_tasks_response = table.scan(
             FilterExpression=Attr('deadline').lt(now.replace(tzinfo=None).isoformat()) & 
-                            Attr('status').ne('expired')
+                            Attr('status').ne('expired') & Attr('status').ne('completed')
         )
         
         expired_tasks = expired_tasks_response.get('Items', [])
