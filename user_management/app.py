@@ -146,11 +146,13 @@ def onboard_user(event, context):
         
         return {
             "statusCode": 200,
+            "headers": myHeaders,
             'body': json.dumps({'message': 'User created successfully'})
         }
     except Exception as e:
         return {
             "statusCode": 500,
+            "headers": myHeaders,
             "body": json.dumps({'error': str(e)})
         }
     

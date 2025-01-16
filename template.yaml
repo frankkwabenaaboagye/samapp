@@ -666,18 +666,6 @@ Resources:
         - CognitoUserPoolAdminPolicy: {}
         - StepFunctionsExecutePolicy:
             StateMachineArn: !GetAtt UserSubscriptionWorkflow.Arn
-        # - Version: "2012-10-17"
-        #   Statement:
-        #     - Effect: Allow
-        #       Action:
-        #         - cognito-idp:AdminAddUserToGroup
-        #         - cognito-idp:ListUsers
-        #         - cognito-idp:*
-        #       Resource: "*"
-        #     - Effect: Allow
-        #       Action:
-        #         - states:StartExecution
-        #       Resource: !GetAtt UserSubscriptionWorkflow.Arn 
       Events:
         OnboardAPI:
           Type: Api
@@ -687,7 +675,7 @@ Resources:
             RestApiId:
               Ref: ApiGatewayApi
       Tags:
-        purpose: "for testing only"
+        purpose: "testing"
 
   CustomMessageFunction:
     Type: AWS::Serverless::Function
