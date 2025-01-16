@@ -473,7 +473,7 @@ def create_email_message(task):
     
     Note: This task must be completed by {task['deadline']}
     
-    System Link: {os.environ.get('SYSTEM_URL', 'System URL will be provided')}
+    System Link: https://main.d3p2bymp0gir41.amplifyapp.com
     
     This is an automated message. Please do not reply to this email.
     """

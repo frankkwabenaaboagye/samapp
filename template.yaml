@@ -20,7 +20,7 @@ Parameters:
   DummyPlaceholder:
     Type: String
     Description: Dummy placeholder
-    Default: "dummy"
+    Default: "dummy holder"
 
 Resources:
   HelloWorldFunction:
@@ -791,7 +791,7 @@ Resources:
             RestApiId:
               Ref: ApiGatewayApi
       Tags:
-        purpose: "testing purpose"
+        purpose: "testing"
 
   UpdateTaskFunction:
     Type: AWS::Serverless::Function
