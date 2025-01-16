@@ -354,27 +354,27 @@ Resources:
   TasksAssignmentNotificationTopic:
     Type: AWS::SNS::Topic
     Properties:
-      TopicName: !Sub ${AWS::StackName}-TasksAssignmentNotificationTopic
+      TopicName: !Sub ${AWS::StackName}-TasksAssignmentNotificationTopic-a
 
   TasksDeadlineNotificationTopic:
     Type: AWS::SNS::Topic
     Properties:
-      TopicName: !Sub ${AWS::StackName}-TasksDeadlineNotificationTopic
+      TopicName: !Sub ${AWS::StackName}-TasksDeadlineNotificationTopic-a
 
   ClosedTasksNotificationTopic:
     Type: AWS::SNS::Topic
     Properties:
-      TopicName: !Sub ${AWS::StackName}-ClosedTasksNotificationTopic
+      TopicName: !Sub ${AWS::StackName}-ClosedTasksNotificationTopic-a
 
   ReopenedTasksNotificationTopic:
     Type: AWS::SNS::Topic
     Properties:
-      TopicName: !Sub ${AWS::StackName}-ReopenedTasksNotificationTopic
+      TopicName: !Sub ${AWS::StackName}-ReopenedTasksNotificationTopic-a
 
   TasksCompletionNotificationTopic:
     Type: AWS::SNS::Topic
     Properties:
-      TopicName: !Sub ${AWS::StackName}-TasksCompletionNotificationTopic
+      TopicName: !Sub ${AWS::StackName}-TasksCompletionNotificationTopic-a
 
   # User Pool Client
   UserPoolClient:
