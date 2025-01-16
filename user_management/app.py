@@ -105,7 +105,6 @@ def onboard_user(event, context):
         email = body['email']
         name = body['name']
         role = body['role']
-        
               
         USER_POOL_ID = os.environ['USER_POOL_ID']
         

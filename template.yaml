@@ -675,7 +675,7 @@ Resources:
             RestApiId:
               Ref: ApiGatewayApi
       Tags:
-        purpose: "testing"
+        purpose: "testing purpose"
 
   CustomMessageFunction:
     Type: AWS::Serverless::Function
