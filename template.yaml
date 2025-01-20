@@ -1,8 +1,7 @@
-AWSTemplateFormatVersion: "2010-09-09"
+AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: >
+Description: |
   tms_back_end
-
   Sample SAM Template for tms_back_end
 
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
@@ -15,12 +14,12 @@ Parameters:
   SystemUrl:
     Type: String
     Description: The URL of my angular frontend application
-    Default: "https://main.d3p2bymp0gir41.amplifyapp.com"
+    Default: https://main.d3p2bymp0gir41.amplifyapp.com
 
   DummyPlaceholder:
     Type: String
     Description: Dummy placeholder
-    Default: "dummy holder"
+    Default: dummy holder
 
 Resources:
   HelloWorldFunction:
@@ -46,9 +45,9 @@ Resources:
       StageName: prod
       # Cors: "'*'"
       Cors:
-        AllowMethods: "'POST, GET, PUT, OPTIONS, DELETE'"
-        AllowHeaders: "'X-Forwarded-For,Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,access-control-allow-origin,access-control-allow-credentials'"
-        AllowOrigin: "'https://main.d3p2bymp0gir41.amplifyapp.com'"
+        AllowMethods: '''POST, GET, PUT, OPTIONS, DELETE'''
+        AllowHeaders: '''X-Forwarded-For,Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,access-control-allow-origin,access-control-allow-credentials'''
+        AllowOrigin: '''https://main.d3p2bymp0gir41.amplifyapp.com'''
         AllowCredentials: true
       Auth:
         AddDefaultAuthorizerToCorsPreflight: false
@@ -78,13 +77,13 @@ Resources:
           AttributeDataType: String
           Mutable: true
           Required: true
-        - Name: "role"
+        - Name: role
           AttributeDataType: String
           Mutable: true
           Required: false
           StringAttributeConstraints:
-            MaxLength: "256"
-            MinLength: "1"
+            MaxLength: '256'
+            MinLength: '1'
       Policies:
         PasswordPolicy:
           MinimumLength: 8
@@ -95,15 +94,14 @@ Resources:
         PostConfirmation: !GetAtt PostConfirmationLambda.Arn
         CustomMessage: !GetAtt CustomMessageFunction.Arn
       EmailConfiguration:
-        EmailSendingAccount: "COGNITO_DEFAULT"
-
+        EmailSendingAccount: COGNITO_DEFAULT
 
   # First, define the Log Group
   PostConfirmationLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-PostConfirmationLambda-a' # added -a
-      RetentionInDays: 30  # Adjust retention period as needed
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}-PostConfirmationLambda-a # added -a
+      RetentionInDays: 30 # Adjust retention period as needed
 
   PostConfirmationLambda:
     Type: AWS::Serverless::Function
@@ -119,7 +117,7 @@ Resources:
         Variables:
           SUBSCRIPTION_WORKFLOW_ARN: !Ref UserSubscriptionWorkflow
       Policies:
-        - Version: "2012-10-17"
+        - Version: '2012-10-17'
           Statement:
             - Effect: Allow
               Action:
@@ -133,7 +131,7 @@ Resources:
                 - cognito-idp:AdminListGroupsForUser
                 - cognito-idp:AdminRemoveUserFromGroup
                 - cognito-idp:*
-              Resource: "*"
+              Resource: '*'
             - Effect: Allow
               Action:
                 - states:StartExecution
@@ -142,7 +140,7 @@ Resources:
               Action:
                 - logs:*
               Resource:
-                - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*"
+                - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*
 
   # Step Functions State Machine
   UserSubscriptionWorkflow:
@@ -162,8 +160,8 @@ Resources:
           DetermineUserType:
             Type: Choice
             Choices:
-              - Variable: "$.role"
-                StringEquals: "Admin"
+              - Variable: $.role
+                StringEquals: Admin
                 Next: AdminSubscriptions
             Default: RegularUserSubscriptions
 
@@ -176,10 +174,10 @@ Resources:
                     Type: Task
                     Resource: !GetAtt SubscribeUserToTopicFunction.Arn
                     Parameters:
-                      "TopicArn": !Ref ClosedTasksNotificationTopic
-                      "Protocol": "email"
-                      "Endpoint.$": "$.email"
-                      "Role": "Admin"
+                      TopicArn: !Ref ClosedTasksNotificationTopic
+                      Protocol: email
+                      Endpoint.$: $.email
+                      Role: Admin
                     End: true
               - StartAt: SubscribeToCompletionAdmin
                 States:
@@ -187,10 +185,10 @@ Resources:
                     Type: Task
                     Resource: !GetAtt SubscribeUserToTopicFunction.Arn
                     Parameters:
-                      "TopicArn": !Ref TasksCompletionNotificationTopic
-                      "Protocol": "email"
-                      "Endpoint.$": "$.email"
-                      "Role": "Admin"
+                      TopicArn: !Ref TasksCompletionNotificationTopic
+                      Protocol: email
+                      Endpoint.$: $.email
+                      Role: Admin
                     End: true
             End: true
 
@@ -203,10 +201,10 @@ Resources:
                     Type: Task
                     Resource: !GetAtt SubscribeUserToTopicFunction.Arn
                     Parameters:
-                      "TopicArn": !Ref TasksAssignmentNotificationTopic
-                      "Protocol": "email"
-                      "Endpoint.$": "$.email"
-                      "Role.$": "$.role"
+                      TopicArn: !Ref TasksAssignmentNotificationTopic
+                      Protocol: email
+                      Endpoint.$: $.email
+                      Role.$: $.role
                     End: true
               - StartAt: SubscribeToDeadlineRegular
                 States:
@@ -214,10 +212,10 @@ Resources:
                     Type: Task
                     Resource: !GetAtt SubscribeUserToTopicFunction.Arn
                     Parameters:
-                      "TopicArn": !Ref TasksDeadlineNotificationTopic
-                      "Protocol": "email"
-                      "Endpoint.$": "$.email"
-                      "Role.$": "$.role"
+                      TopicArn: !Ref TasksDeadlineNotificationTopic
+                      Protocol: email
+                      Endpoint.$: $.email
+                      Role.$: $.role
                     End: true
               - StartAt: SubscribeToClosedRegular
                 States:
@@ -225,10 +223,10 @@ Resources:
                     Type: Task
                     Resource: !GetAtt SubscribeUserToTopicFunction.Arn
                     Parameters:
-                      "TopicArn": !Ref ClosedTasksNotificationTopic
-                      "Protocol": "email"
-                      "Endpoint.$": "$.email"
-                      "Role.$": "$.role"
+                      TopicArn: !Ref ClosedTasksNotificationTopic
+                      Protocol: email
+                      Endpoint.$: $.email
+                      Role.$: $.role
                     End: true
               - StartAt: SubscribeToReopenedRegular
                 States:
@@ -236,10 +234,10 @@ Resources:
                     Type: Task
                     Resource: !GetAtt SubscribeUserToTopicFunction.Arn
                     Parameters:
-                      "TopicArn": !Ref ReopenedTasksNotificationTopic
-                      "Protocol": "email"
-                      "Endpoint.$": "$.email"
-                      "Role.$": "$.role"
+                      TopicArn: !Ref ReopenedTasksNotificationTopic
+                      Protocol: email
+                      Endpoint.$: $.email
+                      Role.$: $.role
                     End: true
               - StartAt: SubscribeToCompletionRegular
                 States:
@@ -247,19 +245,18 @@ Resources:
                     Type: Task
                     Resource: !GetAtt SubscribeUserToTopicFunction.Arn
                     Parameters:
-                      "TopicArn": !Ref TasksCompletionNotificationTopic
-                      "Protocol": "email"
-                      "Endpoint.$": "$.email"
-                      "Role.$": "$.role"
+                      TopicArn: !Ref TasksCompletionNotificationTopic
+                      Protocol: email
+                      Endpoint.$: $.email
+                      Role.$: $.role
                     End: true
             End: true
-
 
   UserSubscriptionWorkflowRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
+        Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Principal:
@@ -270,7 +267,7 @@ Resources:
       Policies:
         - PolicyName: StepFunctionsLogDelivery
           PolicyDocument:
-            Version: "2012-10-17"
+            Version: '2012-10-17'
             Statement:
               - Effect: Allow
                 Action:
@@ -282,10 +279,10 @@ Resources:
                   - logs:PutResourcePolicy
                   - logs:DescribeResourcePolicies
                   - logs:DescribeLogGroups
-                Resource: "*"
+                Resource: '*'
         - PolicyName: CloudWatchLogsAccess
           PolicyDocument:
-            Version: "2012-10-17"
+            Version: '2012-10-17'
             Statement:
               - Effect: Allow
                 Action:
@@ -293,10 +290,10 @@ Resources:
                   - logs:PutLogEvents
                 Resource:
                   - !GetAtt UserSubscriptionWorkflowLogGroup.Arn
-                  - !Sub "${UserSubscriptionWorkflowLogGroup.Arn}:*"
+                  - !Sub ${UserSubscriptionWorkflowLogGroup.Arn}:*
         - PolicyName: LambdaInvocation
           PolicyDocument:
-            Version: "2012-10-17"
+            Version: '2012-10-17'
             Statement:
               - Effect: Allow
                 Action:
@@ -320,7 +317,7 @@ Resources:
         - x86_64
       Policies:
         - SNSCrudPolicy:
-            TopicName: "*"
+            TopicName: '*'
         - Statement:
             - Effect: Allow
               Action:
@@ -329,18 +326,18 @@ Resources:
                 - logs:PutLogEvents
                 - logs:PutRetentionPolicy
               Resource:
-                - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*"
+                - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*
             - Effect: Allow
               Action:
                 - sns:Subscribe
                 - sns:SetSubscriptionAttributes
                 - sns:GetSubscriptionAttributes
                 - sns:ListSubscriptionsByTopic
-              Resource: "*"
+              Resource: '*'
             - Effect: Allow
               Action:
                 - sns:ListTopics
-              Resource: "*"
+              Resource: '*'
       Environment:
         Variables:
           ASSIGNMENT_TOPIC_ARN: !Ref TasksAssignmentNotificationTopic
@@ -350,7 +347,7 @@ Resources:
           COMPLETION_TOPIC_ARN: !Ref TasksCompletionNotificationTopic
           # DUMMY_PLACEHOLDER: !Ref DummyPlaceholder 
 
-  # SNS Topics
+          # SNS Topics
   TasksAssignmentNotificationTopic:
     Type: AWS::SNS::Topic
     Properties:
@@ -453,7 +450,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
+        Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Principal:
@@ -461,13 +458,13 @@ Resources:
             Action: sts:AssumeRoleWithWebIdentity
             Condition:
               StringEquals:
-                "cognito-identity.amazonaws.com:aud": !Ref IdentityPool
-              "ForAnyValue:StringLike":
-                "cognito-identity.amazonaws.com:amr": authenticated
+                cognito-identity.amazonaws.com:aud: !Ref IdentityPool
+              ForAnyValue:StringLike:
+                cognito-identity.amazonaws.com:amr: authenticated
       Policies:
         - PolicyName: AdminPolicy
           PolicyDocument:
-            Version: "2012-10-17"
+            Version: '2012-10-17'
             Statement:
               - Effect: Allow
                 Action:
@@ -483,13 +480,13 @@ Resources:
                   - sns:Publish
                   - sns:Subscribe
                   - sns:Unsubscribe
-                Resource: "*"
+                Resource: '*'
 
   TeamMemberRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
+        Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Principal:
@@ -497,13 +494,13 @@ Resources:
             Action: sts:AssumeRoleWithWebIdentity
             Condition:
               StringEquals:
-                "cognito-identity.amazonaws.com:aud": !Ref IdentityPool
-              "ForAnyValue:StringLike":
-                "cognito-identity.amazonaws.com:amr": authenticated
+                cognito-identity.amazonaws.com:aud: !Ref IdentityPool
+              ForAnyValue:StringLike:
+                cognito-identity.amazonaws.com:amr: authenticated
       Policies:
         - PolicyName: TeamMemberPolicy
           PolicyDocument:
-            Version: "2012-10-17"
+            Version: '2012-10-17'
             Statement:
               - Effect: Allow
                 Action:
@@ -547,7 +544,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
+        Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Principal:
@@ -555,25 +552,25 @@ Resources:
             Action: sts:AssumeRoleWithWebIdentity
             Condition:
               StringEquals:
-                "cognito-identity.amazonaws.com:aud": !Ref IdentityPool
-              "ForAnyValue:StringLike":
-                "cognito-identity.amazonaws.com:amr": authenticated
+                cognito-identity.amazonaws.com:aud: !Ref IdentityPool
+              ForAnyValue:StringLike:
+                cognito-identity.amazonaws.com:amr: authenticated
       Policies:
         - PolicyName: CognitoAuthorizedPolicy
           PolicyDocument:
-            Version: "2012-10-17"
+            Version: '2012-10-17'
             Statement:
               - Effect: Allow
                 Action:
                   - mobileanalytics:PutEvents
                   - cognito-sync:*
-                Resource: "*"
+                Resource: '*'
 
   CognitoUnauthRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
+        Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Principal:
@@ -581,24 +578,24 @@ Resources:
             Action: sts:AssumeRoleWithWebIdentity
             Condition:
               StringEquals:
-                "cognito-identity.amazonaws.com:aud": !Ref IdentityPool
-              "ForAnyValue:StringLike":
-                "cognito-identity.amazonaws.com:amr": unauthenticated
+                cognito-identity.amazonaws.com:aud: !Ref IdentityPool
+              ForAnyValue:StringLike:
+                cognito-identity.amazonaws.com:amr: unauthenticated
       Policies:
         - PolicyName: CognitoUnauthorizedPolicy
           PolicyDocument:
-            Version: "2012-10-17"
+            Version: '2012-10-17'
             Statement:
               - Effect: Deny
-                Action: "*"
-                Resource: "*"
+                Action: '*'
+                Resource: '*'
 
   AdminGroup:
     Type: AWS::Cognito::UserPoolGroup
     Properties:
       GroupName: Admin
       UserPoolId: !Ref CognitoUserPool
-      Description: "Administrator group with full access"
+      Description: Administrator group with full access
       Precedence: 0
       RoleArn: !GetAtt AdminRole.Arn # Link the AdminRole to Admin group
 
@@ -607,7 +604,7 @@ Resources:
     Properties:
       GroupName: TeamMember
       UserPoolId: !Ref CognitoUserPool
-      Description: "Team member group with limited access"
+      Description: Team member group with limited access
       Precedence: 1
       RoleArn: !GetAtt TeamMemberRole.Arn # Link the TeamMemberRole to TeamMember group
 
@@ -623,7 +620,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
+        Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Principal:
@@ -634,7 +631,7 @@ Resources:
       Policies:
         - PolicyName: !Sub ${AWS::StackName}-OnboardUserPolicy
           PolicyDocument:
-            Version: "2012-10-17"
+            Version: '2012-10-17'
             Statement:
               - Effect: Allow
                 Action:
@@ -672,10 +669,9 @@ Resources:
           Properties:
             Path: /users
             Method: post
-            RestApiId:
-              Ref: ApiGatewayApi
+            RestApiId: !Ref ApiGatewayApi
       Tags:
-        purpose: "testing purpose"
+        purpose: testing purpose
 
   CustomMessageFunction:
     Type: AWS::Serverless::Function
@@ -693,12 +689,12 @@ Resources:
           # Add any environment variables needed
           POWERTOOLS_SERVICE_NAME: custom-message
       Policies:
-        - Version: "2012-10-17"
+        - Version: '2012-10-17'
           Statement:
             - Effect: Allow
               Action:
                 - cognito-idp:*
-              Resource: "*" # this can change to !GetAtt CognitoUserPool.Arn
+              Resource: '*' # this can change to !GetAtt CognitoUserPool.Arn
 
   # Add permission for Cognito to invoke the Lambda
   CustomMessagePermission:
@@ -725,15 +721,15 @@ Resources:
       Policies:
         - CognitoUserPoolAdminPolicy: {}
       Events:
-        GetUsersAPI: # New event for GET /users
+        GetUsersAPI:
+          # New event for GET /users
           Type: Api
           Properties:
             Path: /users
             Method: get
-            RestApiId:
-              Ref: ApiGatewayApi
+            RestApiId: !Ref ApiGatewayApi
       Tags:
-        purpose: "testing purpose"
+        purpose: testing purpose
 
   GetTasksFunction:
     Type: AWS::Serverless::Function
@@ -756,10 +752,9 @@ Resources:
           Properties:
             Path: /mock
             Method: get
-            RestApiId:
-              Ref: ApiGatewayApi
+            RestApiId: !Ref ApiGatewayApi
       Tags:
-        purpose: "testing purpose"
+        purpose: testing purpose
 
   CreateTaskFunction:
     Type: AWS::Serverless::Function
@@ -788,10 +783,9 @@ Resources:
           Properties:
             Path: /mock
             Method: post
-            RestApiId:
-              Ref: ApiGatewayApi
+            RestApiId: !Ref ApiGatewayApi
       Tags:
-        purpose: "testing"
+        purpose: testing
 
   UpdateTaskFunction:
     Type: AWS::Serverless::Function
@@ -822,10 +816,9 @@ Resources:
           Properties:
             Path: /mock/{taskId}
             Method: put
-            RestApiId:
-              Ref: ApiGatewayApi
+            RestApiId: !Ref ApiGatewayApi
       Tags:
-        purpose: "testing purpose"
+        purpose: testing purpose
 
   DeleteTaskFunction:
     Type: AWS::Serverless::Function
@@ -848,10 +841,9 @@ Resources:
           Properties:
             Path: /mock/{taskId}
             Method: delete
-            RestApiId:
-              Ref: ApiGatewayApi
+            RestApiId: !Ref ApiGatewayApi
       Tags:
-        purpose: "testing"
+        purpose: testing
 
   GetTaskByIdFunction:
     Type: AWS::Serverless::Function
@@ -874,10 +866,9 @@ Resources:
           Properties:
             Path: /mock/{taskId}
             Method: get
-            RestApiId:
-              Ref: ApiGatewayApi
+            RestApiId: !Ref ApiGatewayApi
       Tags:
-        purpose: "testing"
+        purpose: testing
 
   GetUserTasksFunction:
     Type: AWS::Serverless::Function
@@ -899,10 +890,9 @@ Resources:
           Properties:
             Path: /users/{userId}/tasks
             Method: get
-            RestApiId:
-              Ref: ApiGatewayApi
+            RestApiId: !Ref ApiGatewayApi
       Tags:
-        purpose: "testing"
+        purpose: testing
 
   ReopenTaskFunction:
     Type: AWS::Serverless::Function
@@ -930,10 +920,9 @@ Resources:
           Properties:
             Path: /mock/{taskId}/reopen
             Method: post
-            RestApiId:
-              Ref: ApiGatewayApi
+            RestApiId: !Ref ApiGatewayApi
       Tags:
-        purpose: "testing"
+        purpose: testing
 
   # Dead Letter Queue for handling "expired tasks" in a system
   ExpiredTasksDLQ:
@@ -966,7 +955,7 @@ Resources:
           DEADLINE_QUEUE_URL: !Ref DeadlineNotificationQueue
           EXPIRED_TASKS_QUEUE: !Ref ExpiredTasksQueue
           SYSTEM_URL: !Ref SystemUrl
-          DUMMY_PLACEHOLDER: !Ref DummyPlaceholder # will take it out
+          # DUMMY_PLACEHOLDER: !Ref DummyPlaceholder # will take it out
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref TasksTable
@@ -976,7 +965,7 @@ Resources:
             # QueueName: !GetAtt ExpiredTasksQueue.QueueName
             QueueName: !GetAtt DeadlineNotificationQueue.QueueName
         - SQSSendMessagePolicy:
-            QueueName: !GetAtt ExpiredTasksQueue.QueueName 
+            QueueName: !GetAtt ExpiredTasksQueue.QueueName
         - CloudWatchLogsFullAccess # Add logging permissions
 
   # EventBridge rule to trigger deadline checker
@@ -985,12 +974,12 @@ Resources:
     Properties:
       # Description: "Trigger deadline checker every hour"
       # ScheduleExpression: "rate(1 hour)", "rate(5 minutes)", rate(1 min)
-      Description: "Trigger deadline checker every three minute"
-      ScheduleExpression: "rate(3 minutes)" # Changed from 1 hour, rate(1 day)
+      Description: Trigger deadline checker every three minute
+      ScheduleExpression: rate(1 hour) # Changed from 1 hour, rate(1 day)
       State: ENABLED
       Targets:
         - Arn: !GetAtt DeadlineCheckerFunction.Arn
-          Id: "DeadlineCheckerTarget"
+          Id: DeadlineCheckerTarget
 
   DeadlineCheckerPermission:
     Type: AWS::Lambda::Permission
@@ -1004,7 +993,6 @@ Resources:
   ExpiredTasksWorkflow:
     Type: AWS::Serverless::StateMachine
     Properties:
-      DefinitionUri: statemachines/expired_tasks.asl.json
       DefinitionSubstitutions:
         TasksTable: !Ref TasksTable
         ClosedTasksNotificationTopic: !Ref ClosedTasksNotificationTopic
@@ -1017,14 +1005,15 @@ Resources:
           - CloudWatchLogsLogGroup:
               LogGroupArn: !GetAtt ExpiredTasksLogGroup.Arn
       Tags:
-        purpose: "testing"
+        purpose: testing
+      DefinitionUri: statemachines/expired_tasks.asl.json
 
   # Role for Step Functions with all necessary permissions
   ExpiredTasksWorkflowRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
+        Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Principal:
@@ -1033,7 +1022,7 @@ Resources:
       Policies:
         - PolicyName: StepFunctionsPolicy
           PolicyDocument:
-            Version: "2012-10-17"
+            Version: '2012-10-17'
             Statement:
               # DynamoDB permissions
               - Effect: Allow
@@ -1062,13 +1051,13 @@ Resources:
                   - logs:PutResourcePolicy
                   - logs:DescribeResourcePolicies
                   - logs:DescribeLogGroups
-                Resource: "*"
+                Resource: '*'
 
   # Add CloudWatch Log Group for Step Functions
   ExpiredTasksLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub "/aws/states/${AWS::StackName}-expired-tasks"
+      LogGroupName: !Sub /aws/states/${AWS::StackName}-expired-tasks
       RetentionInDays: 30
 
   # Lambda function to bridge SQS to Step Function
@@ -1105,13 +1094,13 @@ Resources:
         maxReceiveCount: 3
 
   DeadlineNotificationQueue:
-      Type: AWS::SQS::Queue
-      Properties:
-        QueueName: !Sub ${AWS::StackName}-DeadlineNotificationQueue
-        VisibilityTimeout: 300
-        RedrivePolicy:
-          deadLetterTargetArn: !GetAtt DeadlineNotificationDLQ.Arn
-          maxReceiveCount: 3
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${AWS::StackName}-DeadlineNotificationQueue
+      VisibilityTimeout: 300
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt DeadlineNotificationDLQ.Arn
+        maxReceiveCount: 3
 
   # Add SNS Topic Subscription Filter Policies
   TaskAssignmentSubscriptionPolicy:
@@ -1120,7 +1109,7 @@ Resources:
       Topics:
         - !Ref TasksAssignmentNotificationTopic
       PolicyDocument:
-        Version: "2012-10-17"
+        Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Principal:
@@ -1134,7 +1123,7 @@ Resources:
       Topics:
         - !Ref TasksDeadlineNotificationTopic
       PolicyDocument:
-        Version: "2012-10-17"
+        Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Principal:
@@ -1168,30 +1157,29 @@ Resources:
         - SQSPollerPolicy:
             QueueName: !GetAtt TaskAssignmentQueue.QueueName
 
-
   ProcessDeadlineNotificationFunction:
-      Type: AWS::Serverless::Function
-      Properties:
-        CodeUri: hello_world/
-        Handler: app.process_the_deadline_notification
-        Runtime: python3.12
-        Architectures:
-          - x86_64
-        Environment:
-          Variables:
-            DEADLINE_TOPIC_ARN: !Ref TasksDeadlineNotificationTopic
-            SYSTEM_URL: !Ref SystemUrl
-        Events:
-          SQSTaskDeadlineEvent:
-            Type: SQS
-            Properties:
-              Queue: !GetAtt DeadlineNotificationQueue.Arn
-              BatchSize: 10  # Set to 1 to process one notification at a time
-        Policies:
-          - SNSPublishMessagePolicy:
-              TopicName: !GetAtt TasksDeadlineNotificationTopic.TopicName
-          - SQSPollerPolicy:
-              QueueName: !GetAtt DeadlineNotificationQueue.QueueName
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: hello_world/
+      Handler: app.process_the_deadline_notification
+      Runtime: python3.12
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          DEADLINE_TOPIC_ARN: !Ref TasksDeadlineNotificationTopic
+          SYSTEM_URL: !Ref SystemUrl
+      Events:
+        SQSTaskDeadlineEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt DeadlineNotificationQueue.Arn
+            BatchSize: 10 # Set to 1 to process one notification at a time
+      Policies:
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt TasksDeadlineNotificationTopic.TopicName
+        - SQSPollerPolicy:
+            QueueName: !GetAtt DeadlineNotificationQueue.QueueName
 
   # Dead Letter Queue for failed messages
   TaskDLQ:
@@ -1201,26 +1189,23 @@ Resources:
       MessageRetentionPeriod: 1209600 # 14 days
 
   DeadlineNotificationDLQ:
-      Type: AWS::SQS::Queue
-      Properties:
-        QueueName: !Sub ${AWS::StackName}-DeadlineNotificationDLQ
-        MessageRetentionPeriod: 1209600 # 14 days
-
-
-
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${AWS::StackName}-DeadlineNotificationDLQ
+      MessageRetentionPeriod: 1209600 # 14 days
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
   # Find out more about other implicit resources you can reference within SAM
   # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
   HelloWorldApi:
-    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
+    Description: API Gateway endpoint URL for Prod stage for Hello World function
+    Value: !Sub https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/
   HelloWorldFunction:
-    Description: "Hello World Lambda Function ARN"
+    Description: Hello World Lambda Function ARN
     Value: !GetAtt HelloWorldFunction.Arn
   HelloWorldFunctionIamRole:
-    Description: "Implicit IAM Role created for Hello World function"
+    Description: Implicit IAM Role created for Hello World function
     Value: !GetAtt HelloWorldFunctionRole.Arn
 
   #-------------------
@@ -1275,7 +1260,7 @@ Outputs:
 
   GetTasksFunctionLogGroup:
     Description: CloudWatch Log Group for Get Tasks Lambda
-    Value: !Sub "/aws/lambda/${GetTasksFunction}"
+    Value: !Sub /aws/lambda/${GetTasksFunction}
     Export:
       Name: !Sub ${AWS::StackName}-GetTasksFunctionLogGroup
 
@@ -1331,7 +1316,6 @@ Outputs:
     Value: !GetAtt ExpiredTasksProcessor.Arn
     Export:
       Name: !Sub ${AWS::StackName}-ExpiredTasksProcessorArn
-
     # Step Function
   ExpiredTasksWorkflowArn:
     Description: ARN of the Expired Tasks Step Function
